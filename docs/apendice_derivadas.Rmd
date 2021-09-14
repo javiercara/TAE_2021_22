@@ -1,0 +1,31 @@
+---
+title: "Derivada de un escalar respecto a un vector"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+Sean un número $y \in \mathbb{R}$ y un vector $x = [x_1 \ x_2 \ \cdots \ x_n]^T \in \mathbb{R}^{n \times 1}$. Se define la siguiente derivada:
+
+\begin{equation}
+\frac{d y}{d x} = 
+\begin{bmatrix}
+\frac{d y}{d x_1} \\ \frac{d y}{d x_2} \\ \cdots \\ \frac{d y}{d x_n} 
+\end{bmatrix}
+\end{equation}
+
+Se pueden demostrar las siguientes propiedades:
+
+\begin{equation}
+\frac{d(a^T x)}{d x} = \frac{d(x^T a)}{d x} = a
+\end{equation}
+
+\begin{equation}
+\frac{d(x^T A x)}{d x} = (A + A^T)x
+\end{equation}
+
+donde $a \in \mathbb{R}^{n \times 1}$ es un vector y $A \in \mathbb{R}^{n \times n}$ es una matriz.

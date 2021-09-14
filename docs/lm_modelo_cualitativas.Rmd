@@ -1,0 +1,465 @@
+---
+title: "Regresores cualitativos"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+
+# Regresores cualitativos con dos niveles
+
+Las variables cualitativas se representan en R con *factores*. En este caso hay dos variables cualitativas, *mom_hs* y *mom_work*. Como no son factores, se van a convertir a factor:
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+str(d)
+```
+
+```{r}
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+d$mom_work = factor(d$mom_work, labels = c("notrabaja", "trabaja23", "trabaja1_parcial", "trabaja1_completo"))
+```
+
+## Variables auxiliares
+
+La primera opción para incluir regresores cualitativos en el modelo es crear variables auxiliares con valores cero - uno. En este caso se crea la variable auxiliar *secundaria_si*:
+
+- secundaria_si = 1, si la madre ha terminado secundaria (mom_iq = si)
+- secundaria_si = 0, si la madre no ha terminado secundaria (mom_iq = no)
+
+```{r}
+secundaria_si = ifelse(d$mom_hs == "si", 1, 0)
+```
+
+El modelo estadístico que vamos a estimar es:
+
+$$
+kid\_score_i = b_0 + b_1 secundaria\_si_i + e_i
+$$
+
+```{r}
+m = lm(kid_score ~ secundaria_si, data = d)
+coef(m)
+```
+
+El el fondo tenemos dos modelos, uno para las madres que han terminado secundaria y otro para los que no han terminado:
+
+- Madres sin secundaria terminada (variable secundaria_si = 0): El modelo correspondiente es
+
+$$
+kid\_score_i = b_0 + e_i, \quad i \in 1,2,\cdots,n_0
+$$
+
+donde $n_0$ es el numero de madres sin secundaria. Si sumamos en ambos lados del modelo se tiene:
+
+$$
+\sum_{i=1}^{n_0} kid\_score_i = \sum_{i=1}^{n_0} b_0 + \sum_{i=1}^{n_0} e_i = n_0 b_0 \Rightarrow b_0 = \frac{\sum_{i=1}^{n_0} kid\_score_i}{n_0}
+$$
+
+Es decir, que $b_0$ representa la puntuación media de los chicos cuya madre no ha terminado secundaria, `r coef(m)[1]`
+
+```{r}
+mean(d$kid_score[d$mom_hs == "no"])
+```
+
+- Madres con secundaria terminada (variable secundaria_si = 1): el modelo correspondiente es
+
+$$
+kid\_score_i = b_0 + b_1 + e_i, \quad i \in 1,2,\cdots,n_1
+$$
+
+donde $n_1$ es el numero de madres con secundaria. Si sumamos en ambos lados del modelo se tiene:
+
+$$
+\sum_{i=1}^{n_1} kid\_score_i = \sum_{i=1}^{n_1} (b_0 + b_1 + e_i) = n_1 (b_0 + b_1) \Rightarrow b_0 + b_1 = \frac{\sum_{i=1}^{n_1} kid\_score_i}{n_1}
+$$
+
+Es decir, que $b_0 + b_1$ representa la puntuación media de los chicos cuya madre ha terminado secundaria, `r sum(coef(m))`. Por tanto, $b_1$ representa la diferencia entre las puntuaciones medias.
+
+```{r}
+mean(d$kid_score[d$mom_hs == "si"])
+```
+
+## Factores
+
+Una manera más elegante de estimar estos modelos en R es utilizar directamente los factores en la formula de lm():
+
+```{r}
+m = lm(kid_score ~ mom_hs, data = d)
+summary(m)
+```
+
+Internamente, R ha creado la variable auxiliar *mom_hssi*, que toma los valores
+
+- mom_hssi = 1 si mom_hs = si
+- mom_hssi = 0 si mom_hs = no.
+
+R asigna los valores 0 y 1 en función de los niveles del factor:
+
+```{r}
+levels(d$mom_hs)
+```
+
+```{r}
+contrasts(d$mom_hs)
+```
+
+## Variables auxiliares 1
+
+También se podía haber creado la variable auxiliar *secundaria_no*:
+
+- secundaria_no = 0, si la madre ha terminado secundaria (mom_iq = si)
+- secundaria_no = 1, si la madre no ha terminado secundaria (mom_iq = no)
+
+```{r}
+secundaria_no = ifelse(d$mom_hs == "no", 1, 0)
+```
+
+El modelo estadístico que vamos a estimar ahora es:
+
+$$
+kid\_score_i = b_0 + b_1 secundaria\_no_i + e_i
+$$
+
+```{r}
+m = lm(kid_score ~ secundaria_no, data = d)
+coef(m)
+```
+
+Los dos modelos que tenemos ahora son:
+
+- Madres con secundaria terminada (variable secundaria_no = 0): El modelo correspondiente es
+
+$$
+kid\_score_i = b_0 + e_i
+$$
+
+Razonando igual que antes tenemos que $b_0$ representa la puntuación media de los chicos cuya madre ha terminado secundaria, `r coef(m)[1]`. Como vemos el valor coincide con lo obtenido antes.
+
+- Madres sin secundaria terminada (variable secundaria_no = 1): el modelo correspondiente es
+
+$$
+kid\_score_i = b_0 + b_1 + e_i
+$$
+
+Por tanto, $b_0 + b_1$ representa la puntuación media de los chicos cuya madre no ha terminado secundaria. Sumando se obtiene
+
+```{r}
+coef(m)[1] + coef(m)[2]
+```
+
+
+En este caso, $b_1$ sigue representando la diferencia entre las puntuaciones medias.
+
+## Factores 1
+
+Este nuevo modelo se introduce en lm() cambiando el nivel de referencia de la variable factor. Los niveles que tiene actualmente la variable son
+
+```{r}
+levels(d$mom_hs)
+```
+
+EL nivel de referencia es "no". Los valores que R asigna internamente a cada nivel son
+
+```{r}
+contrasts(d$mom_hs)
+```
+
+Cambiamos el nivel de referencia:
+
+```{r}
+d$mom_hs = relevel(d$mom_hs, ref = "si")
+levels(d$mom_hs)
+```
+
+Por tanto, los valores que asigna R a los distintos niveles son
+
+```{r}
+contrasts(d$mom_hs)
+```
+
+Ahora se puede aplicar la función lm():
+
+```{r}
+m = lm(kid_score ~ mom_hs, data = d)
+summary(m)
+```
+
+Vemos que ahora R ha creado la variable auxiliar *mom_hsno*, que toma los valores
+
+- mom_hsno = 0 si mom_hs = si
+- mom_hsno = 1 si mom_hs = no.
+
+R asigna los valores:
+
+```{r}
+contrasts(d$mom_hs)
+```
+
+## Modelo sin ordenada en el origen
+
+Una tercera opción es utilizar el modelo sin ordenada en el origen:
+
+$$
+kid\_score = b_1 secundaria\_si + \beta_2 secundaria\_no + e
+$$
+
+en el que se utilizan las dos variables auxiliares pero se elimina el parámetro $b_0$. Los modelos ahora son:
+
+- madre que si ha terminado secundaria: secundaria_si = 1, secundaria_no = 0
+
+$$
+kid\_score = b_1 + e
+$$
+
+- madre que no ha terminado secundaria: secundaria_si = 0, secundaria_no = 1
+
+$$
+kid\_score = b_2 + e
+$$
+
+Luego $b_1$ representa la puntuación media de los chicos cuya madre ha terminado secundaria y $b_2$ representa la puntuación media de los chicos cuya madre NO ha terminado secundaria.
+
+```{r}
+m = lm(kid_score ~ 0 + secundaria_si + secundaria_no, data = d)
+summary(m)
+```
+
+Con factores:
+
+```{r}
+m = lm(kid_score ~ 0 + mom_hs, data = d)
+summary(m)
+```
+
+# Regresores cualitativos con más de dos niveles
+
+## Variables auxiliares
+
+En el caso de tener regresores cualitativos con más de dos niveles:
+
+```{r}
+levels(d$mom_work)
+```
+
+Definimos las variables axiliares:
+
+- notrabaja_si = 1 si mom_work = notrabaja
+- trabaja23_si = 1 si mom_work = trabaja23
+- trabaja1_parcial_si = 1 si mom_work = trabaja1_parcial
+- trabaja1_completo_si = 1 si mom_work = trabaja1_completo
+
+```{r}
+notrabaja_si = ifelse(d$mom_work == "notrabaja", 1, 0)
+trabaja23_si = ifelse(d$mom_work == "trabaja23", 1, 0)
+trabaja1_parcial_si = ifelse(d$mom_work == "trabaja1_parcial", 1, 0)
+trabaja1_completo_si = ifelse(d$mom_work == "trabaja1_completo", 1, 0)
+```
+
+Como la variable cualitativa tiene **cuatro niveles**, con **tres variables auxiliares** representamos todos los casos. El modelo general es:
+
+$$
+kid\_score = b_0 + b_1 trabaja23\_si + b_2 trabaja1\_parcial\_si + b_3 trabaja1\_completo\_si + e
+$$
+
+- El modelo para las madres que no han trabajado es
+
+$$
+kid\_score = b_0 + e
+$$
+
+ya que en este caso trabaja23_si = 0, trabaja1_parcial_si = 0 y trabaja1_completo_si = 0. Por tanto, la puntuación media de los chicos cuya madre no han trabajado es $b_0$.
+
+- El modelo para las madres que trabajaron el segundo o tercer año es:
+
+$$
+kid\_score = b_0 + b_1 + e
+$$
+
+- El modelo para las madres que trabajaron el primer año a tiempo parcial es:
+
+$$
+kid\_score = b_0 + b_2 + e
+$$
+
+- Por último, el modelo para las madres que trabajaron el primer año a tiempo completo es:
+
+$$
+kid\_score = b_0 + b_3 + e
+$$
+
+En R:
+
+```{r}
+m = lm(kid_score ~ trabaja23_si + trabaja1_parcial_si + trabaja1_completo_si, data = d)
+summary(m)
+```
+
+## Factores
+
+Utilizando factores se obtienen los mismos resultados:
+
+```{r}
+m = lm(kid_score ~ mom_work, data = d)
+summary(m)
+```
+
+Comprobamos que internamente R crea variables auxiliares según los valores:
+
+```{r}
+levels(d$mom_work)
+```
+
+```{r}
+contrasts(d$mom_work)
+```
+
+Podemos hacer otras comparaciones cambiando la variable de referencia:
+
+```{r}
+d$mom_work = relevel(d$mom_work, ref="trabaja1_parcial")
+levels(d$mom_work)
+```
+
+```{r}
+m = lm(kid_score ~ mom_work, data = d)
+summary(m)
+```
+
+Como observamos, el nivel de referencia, que en este caso es "trabaja1_parcial", no aparece explícitamente en el modelo. Efectivamente, el modelo sería:
+
+$$
+kid\_score = b_0 + b_1 notrabaja\_si + b_2 trabaja23\_si + b_3 trabaja1\_completo\_si + e
+$$
+
+El caso de la variable trabaja1_parcial aparece cuando el resto de variables toma el valor cero. En ese caso el modelos sería:
+
+$$
+kid\_score = b_0 + e
+$$
+
+Además de cambiar el nivel de referencia, también se podría reordenar los niveles de la variable factor:
+
+```{r}
+d$mom_work1 = factor(d$mom_work, levels=c("trabaja1_completo","trabaja23","notrabaja","trabaja1_parcial"))
+levels(d$mom_work1)
+```
+
+```{r}
+m = lm(kid_score ~ mom_work1, data = d)
+summary(m)
+```
+
+Como vemos de nuevo, el nivel de referencia no aparece explícitamente.
+
+# Modelo con más de un regresor cualitativo
+
+# Modelo con regresores cualitativos y cuantitativos
+
+## Variables auxiliares
+
+Lo más frecuente es contar con regresores cualitativos y cuantitativos de manera simultánea. Por ejemplo, vamos a introducir en el modelo el regresor *mom_iq* que es cuantitativo, y el regresor *mom_hs* que es cualitativo. Para este último ya tenemos definida la variable auxiliar:
+
+- secundaria_si = 1, si la madre ha terminado secundaria (mom_iq = si)
+- secundaria_si = 0, si la madre no ha terminado secundaria (mom_iq = no)
+
+El modelo que vamos a analizar es
+
+$$
+kid\_score = b_0 + b_1 mom\_iq  + b_2 secundaria\_si + e
+$$
+
+Por tanto:
+
+- si secundaria_si = 0: $kid\_score = b_0 + b_1 mom\_iq + e$
+- si secundaria_si = 1: $kid\_score = (b_0 + b_2) + b_1 mom\_iq + e$
+
+Tenemos dos rectas, **con la misma pendiente** y distinta $\beta_0$. En R:
+
+```{r}
+m = lm(kid_score ~ mom_iq + secundaria_si, data = d)
+summary(m)
+```
+
+Gráficamente:
+
+```{r}
+# Para estar seguro del nivel de referencia:
+d$mom_hs = relevel(d$mom_hs, ref="no")
+```
+
+```{r}
+plot(d$mom_iq, d$kid_score, col = d$mom_hs, pch = 20)
+abline(a = m$coefficients["(Intercept)"], b = m$coefficients["mom_iq"], col = "black")
+abline(a = m$coefficients["(Intercept)"] + m$coefficients["secundaria_si"],
+       b = m$coefficients["mom_iq"], col = "red")
+legend("topleft", legend = c("mom_hs = no", "mom_hs = si"), col = c("black", "red"), pch = 20, cex = 0.8)
+```
+
+Si llamamos dif_100 a la diferencia entre la puntuación media de un chico cuya madre tiene mom_iq = 100 y no ha terminado secundaria y la puntuación media de un chico cuya madre tiene mom_iq = 100 y si ha terminado secundaria; y dif_120 a la diferencia entre la puntuación media de un chico cuya madre tiene mom_iq = 120 y no ha terminado secundaria y la puntuación media de un chico cuya madre tiene mom_iq = 120 y si ha terminado secundaria. Entonces, dif_100 = dif_120 = $b_2$.
+
+## Factores
+
+Si utilizamos directamente los factores en el modelo, R automáticamente crea las variables auxiliares necesarias:
+
+```{r}
+m = lm(kid_score ~ mom_iq + mom_hs, data = d)
+summary(m)
+```
+
+El resultado, como no podía ser de otra manera, es el mismo.
+
+# Modelo con interacción entre regresores cuantitativos y cualitativos
+
+## Variables auxiliares
+
+En el modelo de la sección anterior se ha modelado el efecto de *mom_iq* y *mom_hs* por separado. Sin embargo es posible incluir la interacción de ambas variables, es decir: para las madres que SI terminaron secundaria como influye la variables *mom_iq*, y para las madres que NO terminaron secundaria, como influye *mom_iq*. El modelo se escribe así:
+
+$$
+kid\_score = b_0 + b_1 mom\_iq  + b_2 secundaria\_si + b_3 secundaria\_si * mom\_iq + e
+$$
+
+Como vemos, este modelo incluye dos submodelos:
+
+- si la madre no ha terminado secundaria *secundaria_si = 0*: $kid\_score = b_0 + b_1 mom\_iq + e$
+
+- si la madre si ha terminado secundaria *secundaria_si = 1*: $kid\_score = (b_0 + b_2) + (b_1 + b_3) mom\_iq  + e$
+
+Luego tenemos dos modelos con ordenadas en el origen y pendiente diferentes. En R introducimos la interacción haciendo:
+
+```{r}
+m = lm(kid_score ~ mom_iq + secundaria_si + mom_iq:secundaria_si, data = d)
+summary(m)
+```
+
+Gráficamente:
+
+```{r}
+plot(d$mom_iq, d$kid_score, col = d$mom_hs, pch = 20)
+abline(a = m$coefficients["(Intercept)"], b = m$coefficients["mom_iq"], col = "black")
+abline(a = m$coefficients["(Intercept)"] + m$coefficients["secundaria_si"],
+       b = m$coefficients["mom_iq"] + m$coefficients["mom_iq:secundaria_si"], col = "red")
+```
+
+En este modelo, la diferencia entre puntuaciones medias de chicos no es constante como antes, depende simultáneamente del valor de mom_iq de su madre y de si terminó o no la secundaria.
+
+## Factores
+
+Con factores, la interacción entre variables se incluye también con los dos puntos:
+
+```{r}
+m = lm(kid_score ~ mom_iq + mom_hs + mom_iq:mom_hs, data = d)
+summary(m)
+```
+
+Otra alternativa es utilizar el signo de multiplicación:
+
+```{r}
+m = lm(kid_score ~ mom_iq * mom_hs, data = d)
+summary(m)
+```

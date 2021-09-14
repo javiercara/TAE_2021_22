@@ -1,0 +1,59 @@
+---
+title: "Matrices de covarianzas"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+Sean $m+1$ variables, con $n$ observaciones cada una:
+
+$$
+\begin{matrix}
+y & x_{1} & x_{2} & \cdots & x_{m} \\
+\hline
+y_1 & x_{11} & x_{21} & \cdots  & x_{m1} \\
+y_2 & x_{12} & x_{22} & \cdots  & x_{m2} \\
+\cdots &\cdots & \cdots & \cdots  & \cdots \\
+y_n & x_{1n} & x_{2n} & \cdots  & x_{mn} \\
+\end{matrix}
+$$
+
+se define la covarianza entre las variables $x_j$ e $y$ como:
+
+$$
+cov(x_{j},y) = S_{jy} = \frac{\sum_{i=1}^{n}(x_{ji} - \bar x_j)(y_i - \bar y)}{n-1}, \quad j \in [1,m], \quad i \in [1,n]
+$$
+
+y la covarianza entre las variables $x_j$ e $x_k$ como:
+
+$$
+cov(x_{j},x_{k}) = S_{jk} = \frac{\sum_{i=1}^{n}(x_{ji} - \bar x_j)(x_{ki} - \bar x_{k})}{n-1}, \quad j,k \in [1,m], \quad i \in [1,n]
+$$
+
+Se define la matriz de covarianzas para $x_j$ y $x_k$ como:
+
+$$
+S_{xx} =
+\begin{bmatrix}
+S_{11} & S_{12} & \cdots & S_{1m} \\
+S_{21} & S_{22} & \cdots & S_{2m} \\
+\cdots & \cdots & \cdots & \cdots \\
+S_{m1} & S_{m2} & \cdots & S_{mm} \\
+\end{bmatrix}
+$$
+
+Se define la matriz de covarianzas entre $x_j$ e $y$ como:
+
+$$
+S_{xy} =
+\begin{bmatrix}
+S_{1y} \\
+S_{2y} \\
+\cdots \\
+S_{my} \\
+\end{bmatrix}
+$$

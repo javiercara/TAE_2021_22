@@ -1,0 +1,94 @@
+---
+title: "Propiedades de las variables aleatorias normales"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Una variable aleatoria normal
+
+Sea $X \sim N(\mu,\sigma)$ y $a,b \in \mathbb{R}$. Se cumple que:
+
+$$
+Y = aX + b \Rightarrow Y \sim N(a\mu+b, a\sigma)
+$$
+
+En esta propiedad hay tres resultados importantes:
+
+- Si $X$ es normal entonces $Y$ es normal;
+- $E[aX+b] = aE[X]+b$;
+- $Var[aX+b] = a^2Var[X]$
+
+
+# Dos variables aleatorias normales
+
+Sean $X \sim N(\mu_x,\sigma_x)$, $Y \sim N(\mu_y,\sigma_y)$ y $a,b,c \in \mathbb{R}$. Se cumple que:
+
+$$
+Y = aX + bY + c \Rightarrow Y \sim N(a\mu_x+b\mu_y+c, \sqrt{a^2\sigma_x^2+b^2\sigma_y^2})
+$$
+
+# Transformación de n variables aleatorias
+
+Sean n variables aleatorias normales $X_i$ con $E[X_i] = \mu_{i}$ y $Cov[X_i,X_j] = \sigma^2_{ij}$. Se definen los siguientes vectores y matrices:
+
+$$
+X
+=
+\begin{bmatrix}
+X_1 \\ X_2 \\ \cdots \\ X_n
+\end{bmatrix}
+, \quad
+E[X]
+=
+\begin{bmatrix}
+\mu_1 \\ \mu_2 \\ \cdots \\ \mu_n
+\end{bmatrix}
+, \quad
+Var[X]
+=
+\begin{bmatrix}
+\sigma^2_{11} & \sigma^2_{12} & \cdots & \sigma^2_{1n} \\
+\sigma^2_{21} & \sigma^2_{22} & \cdots & \sigma^2_{2n} \\
+\cdots & \cdots & \cdots & \cdots \\
+\sigma^2_{n1} & \sigma^2_{n2} & \cdots & \sigma^2_{nn} \\
+\end{bmatrix}
+$$
+
+Sean *m* variables aleatorias $Y_i$ definidas de la siguiente manera:
+
+$$
+\begin{bmatrix}
+Y_1 \\ Y_2 \\ \cdots \\ Y_m
+\end{bmatrix}
+=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\cdots & \cdots & \cdots & \cdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn} \\
+\end{bmatrix}
+\begin{bmatrix}
+X_1 \\ X_2 \\ \cdots \\ X_n
+\end{bmatrix}
++
+\begin{bmatrix}
+b_1 \\ b_2 \\ \cdots \\ b_n
+\end{bmatrix}
+\Rightarrow
+Y = AX + b
+$$
+
+Entonces se cumple que:
+
+- las *m* variables aleatorias $Y_i$ tienen distribución normal;
+- $E[Y] = A E[X] + b$;
+- $Var[Y] = A Var[X] A^T$.
+
+
+
+

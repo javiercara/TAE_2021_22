@@ -1,0 +1,256 @@
+---
+title: "Estimación del modelo con la función lm()"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+
+# La función *lm()*
+
+Para estimar modelos lineales en R se utiliza la función *lm()*, de *linear models*:
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+```
+
+```{r}
+m = lm(kid_score ~ mom_iq + mom_age, data = d)
+```
+
+El resultado del análisis se ha guardado en la variable *m*:
+
+- Matriz $X$:
+
+```{r}
+X = model.matrix(m)
+head(X)
+```
+
+- Parámetros estimados $B$:
+
+```{r}
+coefficients(m)
+```
+
+- Valores estimados por el modelo $\hat y$:
+
+```{r}
+y_e = fitted(m)
+head(y_e)
+```
+
+- Residuos $e_i$
+
+```{r}
+e = residuals(m)
+head(e)
+```
+
+- RSS
+
+```{r}
+deviance(m)
+```
+
+Los valores anteriores también se pueden obtener con el símbolo $:
+
+```{r}
+m$coef
+```
+
+También se puede utilizar la función *summary()*, que además de los valores anteriores proporciona otros muchos que se irán viendo en los temas siguientes:
+
+```{r}
+summary(m)
+```
+
+El resultado de summary también se puede guardar en una variable para tener, por ejemplo, el R2:
+
+```{r}
+m_summ = summary(m)
+m_summ$r.squared
+```
+
+# Regresión lineal sin ordenada en el origen
+
+El modelo que queremos estimar es
+
+\begin{equation}
+y_i = b_1 x_{1i} + b_2 x_{2i} + b_3 x_{3i} + e_i, \ i = 1,2,\cdots,n
+\end{equation}
+
+es decir, tenemos que $b_0 = 0$. En forma matricial tendríamos $y = X B + e$, donde:
+
+\begin{equation}
+X = 
+\begin{bmatrix}
+x_{11} & x_{21} & x_{31} \\
+x_{12} & x_{22} & x_{32} \\
+\cdots &\cdots & \cdots \\
+x_{1n} & x_{2n} & x_{3n} \\
+\end{bmatrix}
+, \
+B = 
+\begin{bmatrix}
+b_1 \\ b_2 \\ b_3
+\end{bmatrix}
+\end{equation}
+
+En R:
+
+```{r}
+y = matrix(d$kid_score, ncol = 1)
+X = cbind(d$mom_iq, d$mom_age)
+
+Xt_X = t(X) %*% X
+Xt_y = t(X) %*% y
+( B = solve(Xt_X) %*% Xt_y )
+```
+
+Con la función *lm()*, este modelo se estima añadiendo un cero en la declaración de los regresores:
+
+```{r}
+m = lm(kid_score ~ 0 + mom_iq + mom_age, data = d)
+summary(m)
+```
+
+Otra manera de indicarlo es:
+
+```{r}
+m = lm(kid_score ~ -1 + mom_iq + mom_age, data = d)
+summary(m)
+```
+
+Es curioso el hecho de que $R^2$ ha aumentado y alcanza un valor cercano a uno. Esto es debido a que en este tipo de modelos la fórmula que emplea R para calcular $R^2$ es:
+
+\begin{equation}
+R_0^2 = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum y_i^2}
+\end{equation}
+
+en lugar de
+
+\begin{equation}
+R^2 = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum (y_i - \bar y)^2}
+\end{equation}
+
+Podemos calcular esos dos valores *a mano* para comprobarlo:
+
+```{r}
+1 - sum(m$resid^2)/sum(d$kid_score^2)
+1 - sum(m$resid^2)/sum((d$kid_score - mean(d$kid_score))^2)
+```
+
+Por tanto, el modelo sin ordenada en el origen tiene menor $R^2$.
+
+# Formulas y expresiones en la función lm()
+
+Modelo *lineal* hace referencia a que la ecuación del modelo es una función lineal de los parámetros $\beta_0$, $\beta_1$, $\beta_2$, $\cdots$, $\beta_k$. Modelos en apariencia complicados pueden ser considerados como un modelo lineal. Por ejemplo:
+
+- polinomios:
+
+\begin{equation}
+y = b_0 + b_1 x + b_2 x^2 + e \Rightarrow y = b_0 + b_1 x_1 + b_2 x_2
+\end{equation}
+
+- modelos con funciones en los regresores
+
+\begin{equation}
+y = b_0 + b_1 x + b_2 log x + e \Rightarrow y = b_0 + b_1 x_1 + b_2 x_2
+\end{equation}
+
+- modelos con interacción:
+
+\begin{equation}
+y = b_0 + b_1 x_1 + b_2 x_2 + b_3 x_1 x_2 + e 
+\end{equation}
+
+- este modelo no es lineal
+
+\begin{equation}
+y = b_0 + b_1 x^{b_2} + e
+\end{equation}
+
+En este apartado se va a estudiar como introducir estas regresiones lineales en R. Por ejemplo, queremos realizar la siguiente regresión:
+
+\begin{equation}
+y_i = b_0 + b_1 (x_{1i} + x_{2i}) + e_i
+\end{equation}
+
+En R se expresa mediante el operador $\mathrm I()$:
+
+```{r eval = F}
+y ~ I(x1 + x2)
+```
+
+ya que la expresión:
+
+```{r eval = F}
+y ~ x1 + x2
+```
+
+corresponde al modelo:
+
+\begin{equation}
+y_i = b_0 + b_1 x_{1i} + b_2 x_{2i} + e_i
+\end{equation}
+
+Otro ejemplo es el modelo:
+
+\begin{equation}
+y_i = b_0 + b_1 x_{1i} + b_2 x_{1i}^2 + e_i
+\end{equation}
+
+En R este modelo se expresa utilizando:
+
+```{r eval = F}
+y ~ x1 + I(x2^2)
+```
+
+ya que la expresión
+
+```{r eval = F}
+y ~ x1 + x2^2
+```
+
+significa interacción y no el cuadrado del regresor.
+
+Es frecuente incluir funciones matemáticas en el modelo de regresión. Por ejemplo:
+
+\begin{equation}
+\log(y_i) = b_0 + b_1 x_{1i} + b_2 e^{x_{2i}} + e_i
+\end{equation}
+
+En R, este modelo se indica:
+
+```{r eval = F}
+log(y) ~ x1 + exp(x2)
+```
+
+## Ejemplo
+
+
+```{r}
+m = lm(kid_score ~ mom_iq + I(mom_iq^2), data = d)
+summary(m)
+```
+
+Podemos representar el modelo estimado haciendo
+
+```{r}
+plot(d$mom_iq, d$kid_score)
+points(d$mom_iq, fitted.values(m), col = "red", pch = 19)
+```
+
+Es conveniente recordar que a pesar de que hay un término cuadrático se trata de un modelo lineal ya que el modelo que se estima es en realidad
+
+\begin{equation}
+kid\_score_i = b_0 + b_1 mom\_iq_i + b_2 z_i + e_i
+\end{equation}
+
+donde $z_i = mom\_iq_i^2$.

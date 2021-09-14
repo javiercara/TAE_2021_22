@@ -1,0 +1,148 @@
+---
+title: "Modelo con dos regresores"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+
+# Ecuación del modelo
+
+Ahora se pretende estimar el siguiente modelo con dos regresores:
+
+$$
+kid\_score_i = b_0 + b_1 mom\_iq_i + b_2 mom\_age_i + e_i
+$$
+
+# Modelo en notación matricial
+
+Si escribimos la ecuación para todos los datos disponibles:
+
+$$
+i = 1 \Rightarrow kid\_score_1 = b_0 + b_1 mom\_iq_1 + b_2 mom\_age_1 + e_1
+$$
+
+$$
+i = 2 \Rightarrow kid\_score_2 = b_0 + b_1 mom\_iq_2 + b_2 mom\_age_2 + e_2
+$$
+
+$$
+\cdots
+$$
+
+$$
+i = n \Rightarrow kid\_score_n = b_0 + b_1 mom\_iq_n + b_2 mom\_age_n + e_n
+$$
+
+Agrupando:
+
+$$
+\begin{bmatrix}
+kid\_score_1 \\ kid\_score_2 \\ \cdots \\ kid\_score_n
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & mom\_iq_1 & mom\_age_1 \\
+1 & mom\_iq_2 & mom\_age_2 \\
+\cdots &\cdots & \cdots \\
+1 & mom\_iq_n & mom\_age_n \\
+\end{bmatrix}
+\begin{bmatrix}
+b_0 \\ b_1 \\ b_2
+\end{bmatrix}
++
+\begin{bmatrix}
+e_1 \\ e_2 \\ \cdots \\ e_n
+\end{bmatrix}
+$$
+
+Finalmente, en notación matricial:
+
+$$
+y = X B + e
+$$
+
+donde $B$ es el vector de parámetros estimados:
+
+$$
+B
+=
+\begin{bmatrix}
+b_0 \\ b_1 \\  b_2
+\end{bmatrix}
+$$
+
+# Estimacion del modelo
+
+Para aplicar el método de mínimos cuadrados calculamos la suma de los residuos al cuadrado:
+
+$$
+RSS(B) = \sum e_i^2 = e^T e = (y - X B)^T(y - X B)
+$$
+
+Y derivando e igualando a cero se obtiene:
+
+$$
+B = (X^TX)^{-1}X^Ty
+$$
+
+Como se observa, todo es igual que en el modelo con un regresor. Lo único que cambia es la definición de la matriz de regresores $X$ y el vector de parámetros $B$.
+
+# Aplicación a los datos del ejemplo
+
+- Datos
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+```
+
+- Matrices del modelo
+
+La matriz *y* es la misma que en el ejemplo anterior
+
+```{r}
+y = matrix(d$kid_score, ncol = 1)
+head(y)
+```
+
+```{r}
+n = nrow(d)
+X = cbind(rep(1,n), d$mom_iq, d$mom_age)
+head(X)
+```
+
+- Estimacion
+
+```{r}
+Xt_X = t(X) %*% X
+Xt_y = t(X) %*% y
+( B = solve(Xt_X) %*% Xt_y )
+```
+
+- valores de la recta
+
+```{r}
+y_e = X %*% B
+```
+
+- residuos
+
+```{r}
+e = y - y_e
+```
+
+- R2
+
+```{r}
+(RSS = sum(e^2))
+(TSS = sum((y-mean(y))^2))
+(R2 = 1 - RSS/TSS)
+```
+
+Como vemos, el valor de $R^2$ prácticamente no ha variado, lo que nos hace pensar que los dos modelos han extraido la misma cantidad de información de la variable estudiada $kid\_score$ (a pesar de que el modelo con dos regresores utiliza muchos más datos, los correspondientes a la edad de las madres. A igualdad de $R^2$ es preferible utilizar el modelo más sencillo).
+

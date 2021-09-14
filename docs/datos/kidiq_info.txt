@@ -1,0 +1,9 @@
+kid_score    : puntuacion de un test cognitivo en niños de 3-4 años
+mom_hs = 1   : las madres han terminado high school
+mom_hs = 0   : las madres no terminaron high school
+mom_iq       : puntuación de la madre en un test IQ
+mom_work = 1 : la madre no trabajó en los primeros tres años del niño
+mom_work = 2 : la madre trabajó en el 2do o tercer año
+mom_work = 3 : la madre trabajó a tiempo parcial el primer año
+mom_work = 4 : la madre trabajó a tiempo completo el primer año
+mom_age      : edad de la madre
