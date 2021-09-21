@@ -1,0 +1,215 @@
+---
+title: "Estimadores y su distribución"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Modelo generador de datos
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+```
+
+Para el modelo
+
+```{r}
+m = lm(kid_score ~ mom_hs, data = d)
+summary(m)
+```
+
+se tiene que:
+
+- la puntuación media de los chicos cuya madre NO ha terminado secundaria es 77.55
+- la puntuación media de los chicos cuya madre SI ha terminado secundaria es 77.55 + 11.77 = 89.32
+
+Por tanto, la puntuación de los segundos es superior a la de los primeros. Pero este resultado se ha obtenido con los datos de 434 madres y sus hijos. ¿Es generalizable? ¿Si repetimos los cálculos con otras madres e hijos obtendremos las mismas conclusiones? ¿Se puede afirmar que si una madre termina secundaria influye positivamente en la capacidad cognitiva de sus hijos?
+
+Para resolver este problema se hace lo siguiente:
+
+- se considera que el modelo que representa la relación entre puntuación del test y haber acabado secundaria es:
+
+$$
+kid\_score_i = \beta_0 + \beta_1 mom\_hs_i + U_i, \quad U_i \sim N(0,\sigma)
+$$
+
+- Este modelo es válido para **todas** las madres y sus hijos. Por tanto, $\beta_0$ representa la puntuación media de **todos** los chicos cuyas madres no terminaron secundaria. Igualmente, $\beta_0 + \beta_1$ representa la puntuación media de **todos** los chicos cuyas madres terminaron secundaria, también de manera general. Estos parámetros no son conocidos.
+
+- se considera que los datos que tenemos, los 434 datos en este caso, han sido generados por el modelo anterior. Es decir, es como si hubiésemos simulado el modelo anterior y hubiésemos obtenido dichos datos particulares.
+
+- estamos interesados en los parámetros del **modelo generador** de los datos, ya que es el que indica conclusiones generales. Pero dichos parámetros son desconocidos y **no se pueden conocer**. Sin embargo, podemos calcular un valor aproximado a partir de los datos observados.
+
+# Estimadores puntuales de los parámetros del modelo
+
+El modelo de la población tiene tres parámetros: $\beta_0$, $\beta_1$ y $\sigma$. Lo primero que haremos es estimar un valor para dichos parámetros.
+
+Se denomina **estimador de un parámetro** a cualquier expresión que asigna un valor a dicho parámetro. Y se denomina **estimación** al valor asignado.
+
+Por ejemplo, podríamos utilizar los siguientes estimadores (se indica poniendo el símbolo $\hat \square$):
+
+$$
+\hat \beta_1 = suma(kid\_score_i), \ \hat \beta_0 = media(kid\_score_i), \ \hat \sigma = Var(kid\_score_i)
+$$
+
+lo que daría lugar a las siguientes estimaciones:
+
+```{r}
+# para beta_0
+sum(d$kid_score)
+# para beta_1
+mean(d$kid_score)
+# para sigma
+var(d$kid_score)
+```
+
+Sin embargo, unos estimadores tienen mejores propiedades que otros. Nosotros vamos a utilizar como estimadores los valores calculados con mínimos cuadrados:
+
+$$
+kid\_score_i = b_0 + b_1mom\_hs_i + e_i, \ i = 1,2,\cdots,n
+$$
+
+$$
+\begin{bmatrix}
+\hat \beta_0 \\ \hat \beta_1
+\end{bmatrix}
+=
+\begin{bmatrix}
+b_0 \\ b_1
+\end{bmatrix}
+=
+(X^T X)^{-1} (X^T y)
+$$
+
+La estimación es:
+
+```{r}
+coefficients(m)
+```
+
+El estimador de $\sigma$ se define como (no es un resultado de mínimos cuadrados):
+
+$$
+\hat \sigma = \sqrt{ \frac{\sum e_i^2}{n-k-1} }
+$$
+
+donde $k$ es el número de regresores, 1 en este caso.
+
+La estimación tomará el valor:
+
+```{r}
+sqrt( sum(resid(m)^2)/(434-2) )
+```
+
+# Distribución en el muestreo de los estimadores puntuales
+
+## Distribución del estimador de $\beta$
+
+El hecho de considerar que nuestros datos han sido generados por un modelo con variables aleatorias hace que los estimadores sean variables aleatorias: si consideramos otra muestra diferente, los valores obtenidos serán diferentes, y antes de seleccionar la muestra no sabemos que valores vamos a obtener. 
+
+Como hemos visto en el apartado anterior, la distribución de los estimadores la obtenemos teniendo en cuenta que:
+
+$$
+Y_i = \beta_0 + \beta_1 x_i + U_i, \quad U_i \sim N(0,\sigma), \quad i = 1,\cdots,n
+$$
+
+En forma matricial
+
+$$
+Y = X \beta + U, \ U \sim N(0,\sigma \mathrm{I}) \Rightarrow
+$$
+$$
+Y \sim N(X \beta, \sigma \mathrm{I})
+$$
+
+### Con matrices de datos
+
+La ecuación de los estimadores es
+
+$$
+\hat \beta
+=
+(X^T X)^{-1} (X^T y)
+$$
+
+Si consideramos variables aleatorias en lugar de datos:
+
+$$
+\hat \beta
+=
+(X^T X)^{-1} (X^T Y)
+$$
+obtenemos la distribución de los estimadores:
+
+$$
+\hat \beta \sim N(\beta, \sigma^2 (X^T X)^{-1})
+$$
+
+ya que si $U \sim Normal$ entonces $Y \sim Normal$, y
+
+$$
+E[\hat \beta] = E[(X^TX)^{-1}X^T Y] = (X^TX)^{-1}X^T E[Y] = (X^TX)^{-1}X^T X\beta = \beta
+$$
+
+$$
+Var[\hat \beta] = Var[(X^TX)^{-1}X^T Y] = (X^TX)^{-1}X^T Var[Y] ((X^TX)^{-1}X^T)^T = (X^TX)^{-1} \sigma^2
+$$
+
+### Con matrices de covarianzas
+
+Si en lugar de utilizar las matrices $(X^TX)^{-1}$ y $(X^T y)$ utilizamos matrices de varianzas y convarianzas, los estimadores son:
+
+$$
+\hat \beta^* = S_{XX}^{-1} S_{Xy} = (\tilde X^T \tilde X)^{-1} \tilde X^T \tilde y
+$$
+
+donde $\hat \beta^* = [\hat \beta_1 \ \hat \beta_2 \ \cdots \ \hat \beta_k]^T$. Faltaría el estimador de $\beta_0$ que se obtiene con la ecuación
+
+$$
+\hat \beta_0 = \bar y - \bar x^T \hat \beta^*
+$$
+
+dónde $\bar x = [\bar x_1 \ \bar x_2 \ \cdots \ \bar x_n]^T$. Se puede demostrar que
+
+$$
+\hat \beta^* \sim N \left( \beta^*, \frac{\sigma^2}{n-1}S_{XX}^{-1} \right), \quad \hat \beta_0 \sim N \left( \beta_0, \sigma^2 \left( \frac{1}{n} + \frac{1}{n-1} \bar x^T S_{XX}^{-1} \bar x \right) \right)
+$$
+
+En la primera ecuación $\beta^* = [\beta_1 \ \beta_2 \ \cdots \ \beta_k]^T$.
+
+## Distribución del estimador de $\sigma^2$
+
+El modelo tiene ahora un parámetro más, que es la varianza de los errores, $\sigma^2$. Este parámetro también hay que estimarlo. Se puede demostrar que 
+
+$$
+\frac{\sum e_i^2}{\sigma^2} \rightarrow \chi^2_{n-k-1}
+$$
+
+donde n es el número de observaciones y k es el número de regresores. Por ello se propone el siguiente estimador 
+
+$$
+\hat \sigma^2 = \frac{\sum e_i^2}{n-k-1}
+$$
+
+ya que es un estimador insesgado de $\sigma^2$.  Efectivamente
+
+$$
+E[\hat \sigma^2] = E \left[ \frac{\sum e_i^2}{n-k-1} \right] = \sigma^2
+$$
+
+ya que $E[\chi^2_n] = n$. Al término $\sum e_i^2/(n-k-1)$ también se lo conoce como **varianza residual** y se representa por $\hat s_R^2$. 
+
+$$
+\hat s_R^2 = \frac{\sum e_i^2}{n-k-1}
+$$
+
+A la raiz cuadrada se le conoce como **residual standard error**. El término (n-k-1) son los *grados de libertad*. La distribución en el muestreo de la varianza residual es
+
+$$
+\frac{\sum e_i^2}{\sigma^2} \rightarrow \chi^2_{n-k-1} \Rightarrow \frac{(n-k-1)\hat s_R^2}{\sigma^2} \rightarrow \chi^2_{n-k-1}
+$$
+

@@ -29,8 +29,8 @@ d$mom_work = factor(d$mom_work, labels = c("notrabaja", "trabaja23", "trabaja1_p
 
 La primera opción para incluir regresores cualitativos en el modelo es crear variables auxiliares con valores cero - uno. En este caso se crea la variable auxiliar *secundaria_si*:
 
-- secundaria_si = 1, si la madre ha terminado secundaria (mom_iq = si)
-- secundaria_si = 0, si la madre no ha terminado secundaria (mom_iq = no)
+- secundaria_si = 1, si la madre ha terminado secundaria (mom_hs = si)
+- secundaria_si = 0, si la madre no ha terminado secundaria (mom_hs = no)
 
 ```{r}
 secundaria_si = ifelse(d$mom_hs == "si", 1, 0)
@@ -281,6 +281,8 @@ $$
 kid\_score = b_0 + b_1 + e
 $$
 
+por tanto $b_1$ representa las diferencias entre la puntuación media de los chicos cuya madre no trabaja y los de las madres que trabajaron el segunto o tercer año. 
+
 - El modelo para las madres que trabajaron el primer año a tiempo parcial es:
 
 $$
@@ -433,7 +435,7 @@ Como vemos, este modelo incluye dos submodelos:
 Luego tenemos dos modelos con ordenadas en el origen y pendiente diferentes. En R introducimos la interacción haciendo:
 
 ```{r}
-m = lm(kid_score ~ mom_iq + secundaria_si + mom_iq:secundaria_si, data = d)
+m = lm(kid_score ~ mom_iq + secundaria_si + I(mom_iq*secundaria_si), data = d)
 summary(m)
 ```
 
@@ -443,21 +445,21 @@ Gráficamente:
 plot(d$mom_iq, d$kid_score, col = d$mom_hs, pch = 20)
 abline(a = m$coefficients["(Intercept)"], b = m$coefficients["mom_iq"], col = "black")
 abline(a = m$coefficients["(Intercept)"] + m$coefficients["secundaria_si"],
-       b = m$coefficients["mom_iq"] + m$coefficients["mom_iq:secundaria_si"], col = "red")
+       b = m$coefficients["mom_iq"] + m$coefficients["I(mom_iq * secundaria_si)"], col = "red")
 ```
 
 En este modelo, la diferencia entre puntuaciones medias de chicos no es constante como antes, depende simultáneamente del valor de mom_iq de su madre y de si terminó o no la secundaria.
 
 ## Factores
 
-Con factores, la interacción entre variables se incluye también con los dos puntos:
+Con factores, la interacción entre variables se incluye con los dos puntos:
 
 ```{r}
 m = lm(kid_score ~ mom_iq + mom_hs + mom_iq:mom_hs, data = d)
 summary(m)
 ```
 
-Otra alternativa es utilizar el signo de multiplicación:
+Otra alternativa es utilizar el signo de multiplicación, que incluye los regresores por separado y la interacción:
 
 ```{r}
 m = lm(kid_score ~ mom_iq * mom_hs, data = d)

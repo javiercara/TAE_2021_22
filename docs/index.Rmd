@@ -1,7 +1,7 @@
 ---
 title: "Técnicas Avanzadas de Estadística"
 author: "[Javier Cara](https://www.javiercara.com/)"
-date: "curso 2020-21"
+date: "curso 2021-22"
 output: 
   html_document:
     number_sections: true
