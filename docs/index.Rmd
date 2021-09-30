@@ -33,7 +33,7 @@ output:
     e. [Bootstrap](lm_inferencia_bootstrap.html) [(pdf)](lm_inferencia_bootstrap.pdf)
 3. Aplicaciones del modelo de regresión lineal
     a. [Cálculo de predicciones](lm_aplicaciones_prediccion.html) [(pdf)](lm_aplicaciones_prediccion.pdf)
-    b. [Explicación de relaciones entre variables](lm_aplicaciones_explicacion.html) [(pdf)](lm_aplicaciones_explicacion.pdf)
+    b. [Análisis de las relaciones entre variables](lm_aplicaciones_explicacion.html) [(pdf)](lm_aplicaciones_explicacion.pdf)
 4. Diagnosis
     a. [Análisis de los residuos del modelo](lm_diagnosis.html) [(pdf)](lm_diagnosis.pdf)
 5. Ejemplo

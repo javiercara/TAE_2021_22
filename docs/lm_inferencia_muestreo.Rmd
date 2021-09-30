@@ -114,7 +114,7 @@ El hecho de considerar que nuestros datos han sido generados por un modelo con v
 Como hemos visto en el apartado anterior, la distribución de los estimadores la obtenemos teniendo en cuenta que:
 
 $$
-Y_i = \beta_0 + \beta_1 x_i + U_i, \quad U_i \sim N(0,\sigma), \quad i = 1,\cdots,n
+Y_i = \beta_0 + \beta_1 x_{1i} + \cdots + \beta_k x_{ki} + U_i, \quad U_i \sim N(0,\sigma), \quad i = 1,\cdots,n
 $$
 
 En forma matricial
@@ -149,7 +149,9 @@ $$
 \hat \beta \sim N(\beta, \sigma^2 (X^T X)^{-1})
 $$
 
-ya que si $U \sim Normal$ entonces $Y \sim Normal$, y
+ya que 
+
+si $U \sim Normal$ entonces $Y \sim Normal$
 
 $$
 E[\hat \beta] = E[(X^TX)^{-1}X^T Y] = (X^TX)^{-1}X^T E[Y] = (X^TX)^{-1}X^T X\beta = \beta
@@ -183,7 +185,7 @@ En la primera ecuación $\beta^* = [\beta_1 \ \beta_2 \ \cdots \ \beta_k]^T$.
 
 ## Distribución del estimador de $\sigma^2$
 
-El modelo tiene ahora un parámetro más, que es la varianza de los errores, $\sigma^2$. Este parámetro también hay que estimarlo. Se puede demostrar que 
+El modelo tiene un parámetro más, la varianza de los errores, $\sigma^2$. Este parámetro también hay que estimarlo. Se puede demostrar que 
 
 $$
 \frac{\sum e_i^2}{\sigma^2} \rightarrow \chi^2_{n-k-1}
