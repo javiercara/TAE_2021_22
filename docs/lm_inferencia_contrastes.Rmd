@@ -199,9 +199,17 @@ $$
 $$
 ya que $\sum (\hat y_i - \bar y) e_i = 0$. Se denominan:
 
-- Variabilitad total: $\boxed{VT = \sum (y_i - \bar y)^2} = (n-1)\hat s_y^2$
-- Variabilidad explicada: $\boxed{VE = \sum (\hat y_i - \bar y)^2}$
-- Variabilidad no explicada o residual: $\boxed{VNE = \sum e_i^2} = (n-k-1)\hat s_R^2$
+- Variabilitad total: 
+
+$$VT = \sum (y_i - \bar y)^2 = (n-1)\hat s_y^2$$
+
+- Variabilidad explicada: 
+
+$$VE = \sum (\hat y_i - \bar y)^2$$
+
+- Variabilidad no explicada o residual: 
+
+$$VNE = \sum e_i^2 = (n-k-1)\hat s_R^2$$
 
 ## Contraste
 
@@ -214,8 +222,8 @@ $$
 
 Para resolver este contraste, se puede demostrar que:
 
-- Si $\beta_1 = \beta_2 = \cdots = \beta_k = 0 \Rightarrow \boxed{VE/\sigma^2 \sim \chi^2_k}$
-- $\boxed{VNE/\sigma^2 \sim \chi^2_{n-k-1}}$
+- Si $\beta_1 = \beta_2 = \cdots = \beta_k = 0 \Rightarrow VE/\sigma^2 \sim \chi^2_k$
+- $VNE/\sigma^2 \sim \chi^2_{n-k-1}$
 - VE y VNE son independientes.
 
 Por lo tanto es razonable utilizar el estadístico:
@@ -349,14 +357,18 @@ anova(m4, m1)
 El contraste que resolvemos es $H_0 : \beta_{mom\_iq} = \beta_{mom\_age}$ en el modelo *kid_score ~ mom_hs + mom_iq + mom_age*. Hacemos la comparación con el modelo:
 
 ```{r}
-m5 = lm(kid_score ~ I(mom_iq + mom_age) + mom_hs, data = d)
+m5 = lm(kid_score ~ mom_hs + I(mom_iq + mom_age), data = d)
 (VNE5 = sum(resid(m5)^2))
 m = 2
 (F_0 = ((VNE5 - VNE)/(k-m))/(VNE/(n-k-1)))
 # pvalor
 1-pf(F_0, k-m, n-k-1)
 ```
+OJO, el modelo m5 es:
 
+$$
+kid\_score_i = \beta_0 + \beta_1 mom\_hs_i + \beta_2 mom\_iq_i +  \beta_2 mom\_age_i + u_i
+$$
 - En R:
 
 ```{r}
@@ -365,26 +377,45 @@ anova(m5,m1)
 
 Como vemos no se puede rechazar la hipótesis nula *Los modelos son iguales*, luego no se puede rechazar $H_0 : \beta_{mom\_iq} = \beta_{mom\_age}$.
 
-En realidad, el modelo que estamos estimando es:
+Por último vamos a resolver este contraste con la t-student. El modelo m1 es 
+
+$$kid\_score = \beta_0 + \beta_1 mom\_hssi + \beta_2 mom\_iq + \beta_3 mom\_age + u$$
+
+La hipótesis nula del contraste es: $H_0 : \beta_2 = \beta_3$. Para encontrar el estadístico del contraste tenemos que:
 
 $$
-kid\_score_i = \beta_0 + \beta_1 mom\_iq_i +  \beta_1 mom\_age_i + \beta_2 mom\_hs_i + u_i
+\hat \beta_2 \sim N(\beta_2, \sigma^2 \tilde Q_{3,3}), \quad \hat \beta_3 \sim N(\beta_3, \sigma^2 \tilde Q_{4,4})
 $$
 
-El valor que estimamos para $\beta_1$ es `r coef(m5)[2]`. 
+Por tanto:
+
+$$
+\hat \beta_2 - \hat \beta_3 \sim N(\beta_2 - \beta_3, \sigma^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))
+$$
+
+Es decir:
+
+$$
+\frac{(\hat \beta_2 - \hat \beta_3) - (\beta_2 - \beta_3)}{\sqrt{\sigma^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim N(0,1)
+$$
+
+Reemplazando $\sigma^2$ por $\hat s_R^2$ se tiene:
+
+$$
+\frac{(\hat \beta_2 - \hat \beta_3) - (\beta_2 - \beta_3)}{\sqrt{\hat s_R^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim t_{n-k-1}
+$$
+
+Finalmente el estadístico del contraste cuando $H_0$ es cierta es:
+
+$$
+t_0 = \frac{\hat \beta_2 - \hat \beta_3}{\sqrt{\hat s_R^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim t_{n-k-1}
+$$
 
 ```{r}
-coefficients(m5)
+beta_var = vcov(m1)
+(t0 = (coef(m1)[3] - coef(m1)[4])/sqrt(beta_var[3,3] + beta_var[4,4] - 2*beta_var[3,4]))
+# pvalor
+2*pt(abs(t0), n - k - 1, lower.tail = F)
 ```
-
-Pero ese valor pertenece al intervalo de confianza de *mom_iq* y *mom_age* que calculamos en el modelo m1:
-
-```{r}
-confint(m1)
-```
-
-luego es un valor posible para $\beta_{mom\_iq}$ y $\beta_{mom\_age}$, luego no podemos rechazar que $|beta_{mom\_iq} = \beta_{mom\_age}$.
-
-
 
 

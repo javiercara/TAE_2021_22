@@ -440,10 +440,17 @@ y_i - \bar y = \hat y_i - \bar y + e_i
 \sum (y_i - \bar y)^2 = \sum (\hat y_i - \bar y)^2 + \sum e_i^2 
 \]</span> ya que <span class="math inline">\(\sum (\hat y_i - \bar y) e_i = 0\)</span>. Se denominan:</p>
 <ul>
-<li>Variabilitad total: <span class="math inline">\(\boxed{VT = \sum (y_i - \bar y)^2} = (n-1)\hat s_y^2\)</span></li>
-<li>Variabilidad explicada: <span class="math inline">\(\boxed{VE = \sum (\hat y_i - \bar y)^2}\)</span></li>
-<li>Variabilidad no explicada o residual: <span class="math inline">\(\boxed{VNE = \sum e_i^2} = (n-k-1)\hat s_R^2\)</span></li>
+<li>Variabilitad total:</li>
 </ul>
+<p><span class="math display">\[VT = \sum (y_i - \bar y)^2 = (n-1)\hat s_y^2\]</span></p>
+<ul>
+<li>Variabilidad explicada:</li>
+</ul>
+<p><span class="math display">\[VE = \sum (\hat y_i - \bar y)^2\]</span></p>
+<ul>
+<li>Variabilidad no explicada o residual:</li>
+</ul>
+<p><span class="math display">\[VNE = \sum e_i^2 = (n-k-1)\hat s_R^2\]</span></p>
 </div>
 <div id="contraste" class="section level2" number="4.3">
 <h2 number="4.3"><span class="header-section-number">4.3</span> Contraste</h2>
@@ -454,8 +461,8 @@ H_1 : \text{Algún } \beta_i \neq 0
 \]</span></p>
 <p>Para resolver este contraste, se puede demostrar que:</p>
 <ul>
-<li>Si <span class="math inline">\(\beta_1 = \beta_2 = \cdots = \beta_k = 0 \Rightarrow \boxed{VE/\sigma^2 \sim \chi^2_k}\)</span></li>
-<li><span class="math inline">\(\boxed{VNE/\sigma^2 \sim \chi^2_{n-k-1}}\)</span></li>
+<li>Si <span class="math inline">\(\beta_1 = \beta_2 = \cdots = \beta_k = 0 \Rightarrow VE/\sigma^2 \sim \chi^2_k\)</span></li>
+<li><span class="math inline">\(VNE/\sigma^2 \sim \chi^2_{n-k-1}\)</span></li>
 <li>VE y VNE son independientes.</li>
 </ul>
 <p>Por lo tanto es razonable utilizar el estadístico:</p>
@@ -612,7 +619,7 @@ qf(0.05, k-m, n-k-1)</code></pre>
 <div id="ejemplo-contraste-de-igualdad-de-regresores" class="section level2" number="5.4">
 <h2 number="5.4"><span class="header-section-number">5.4</span> Ejemplo: contraste de igualdad de regresores</h2>
 <p>El contraste que resolvemos es <span class="math inline">\(H_0 : \beta_{mom\_iq} = \beta_{mom\_age}\)</span> en el modelo <em>kid_score ~ mom_hs + mom_iq + mom_age</em>. Hacemos la comparación con el modelo:</p>
-<pre class="r"><code>m5 = lm(kid_score ~ I(mom_iq + mom_age) + mom_hs, data = d)
+<pre class="r"><code>m5 = lm(kid_score ~ mom_hs + I(mom_iq + mom_age), data = d)
 (VNE5 = sum(resid(m5)^2))</code></pre>
 <pre><code>## [1] 141933.5</code></pre>
 <pre class="r"><code>m = 2
@@ -621,34 +628,49 @@ qf(0.05, k-m, n-k-1)</code></pre>
 <pre class="r"><code># pvalor
 1-pf(F_0, k-m, n-k-1)</code></pre>
 <pre><code>## [1] 0.318489</code></pre>
-<ul>
-<li>En R:</li>
-</ul>
+<p>OJO, el modelo m5 es:</p>
+<p><span class="math display">\[
+kid\_score_i = \beta_0 + \beta_1 mom\_hs_i + \beta_2 mom\_iq_i +  \beta_2 mom\_age_i + u_i
+\]</span> - En R:</p>
 <pre class="r"><code>anova(m5,m1)</code></pre>
 <pre><code>## Analysis of Variance Table
 ## 
-## Model 1: kid_score ~ I(mom_iq + mom_age) + mom_hs
+## Model 1: kid_score ~ mom_hs + I(mom_iq + mom_age)
 ## Model 2: kid_score ~ (mom_hs + mom_iq + mom_work + mom_age) - mom_work
 ##   Res.Df    RSS Df Sum of Sq      F Pr(&gt;F)
 ## 1    431 141934                           
 ## 2    430 141605  1    328.48 0.9975 0.3185</code></pre>
 <p>Como vemos no se puede rechazar la hipótesis nula <em>Los modelos son iguales</em>, luego no se puede rechazar <span class="math inline">\(H_0 : \beta_{mom\_iq} = \beta_{mom\_age}\)</span>.</p>
-<p>En realidad, el modelo que estamos estimando es:</p>
+<p>Por último vamos a resolver este contraste con la t-student. El modelo m1 es</p>
+<p><span class="math display">\[kid\_score = \beta_0 + \beta_1 mom\_hssi + \beta_2 mom\_iq + \beta_3 mom\_age + u\]</span></p>
+<p>La hipótesis nula del contraste es: <span class="math inline">\(H_0 : \beta_2 = \beta_3\)</span>. Para encontrar el estadístico del contraste tenemos que:</p>
 <p><span class="math display">\[
-kid\_score_i = \beta_0 + \beta_1 mom\_iq_i +  \beta_1 mom\_age_i + \beta_2 mom\_hs_i + u_i
+\hat \beta_2 \sim N(\beta_2, \sigma^2 \tilde Q_{3,3}), \quad \hat \beta_3 \sim N(\beta_3, \sigma^2 \tilde Q_{4,4})
 \]</span></p>
-<p>El valor que estimamos para <span class="math inline">\(\beta_1\)</span> es 0.549727.</p>
-<pre class="r"><code>coefficients(m5)</code></pre>
-<pre><code>##         (Intercept) I(mom_iq + mom_age)            mom_hssi 
-##           15.117779            0.549727            5.321065</code></pre>
-<p>Pero ese valor pertenece al intervalo de confianza de <em>mom_iq</em> y <em>mom_age</em> que calculamos en el modelo m1:</p>
-<pre class="r"><code>confint(m1)</code></pre>
-<pre><code>##                  2.5 %     97.5 %
-## (Intercept)  3.0394352 38.9298887
-## mom_hssi     1.2097371 10.0845653
-## mom_iq       0.4433466  0.6817419
-## mom_age     -0.4253280  0.8748289</code></pre>
-<p>luego es un valor posible para <span class="math inline">\(\beta_{mom\_iq}\)</span> y <span class="math inline">\(\beta_{mom\_age}\)</span>, luego no podemos rechazar que <span class="math inline">\(|beta_{mom\_iq} = \beta_{mom\_age}\)</span>.</p>
+<p>Por tanto:</p>
+<p><span class="math display">\[
+\hat \beta_2 - \hat \beta_3 \sim N(\beta_2 - \beta_3, \sigma^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))
+\]</span></p>
+<p>Es decir:</p>
+<p><span class="math display">\[
+\frac{(\hat \beta_2 - \hat \beta_3) - (\beta_2 - \beta_3)}{\sqrt{\sigma^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim N(0,1)
+\]</span></p>
+<p>Reemplazando <span class="math inline">\(\sigma^2\)</span> por <span class="math inline">\(\hat s_R^2\)</span> se tiene:</p>
+<p><span class="math display">\[
+\frac{(\hat \beta_2 - \hat \beta_3) - (\beta_2 - \beta_3)}{\sqrt{\hat s_R^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim t_{n-k-1}
+\]</span></p>
+<p>Finalmente el estadístico del contraste cuando <span class="math inline">\(H_0\)</span> es cierta es:</p>
+<p><span class="math display">\[
+t_0 = \frac{\hat \beta_2 - \hat \beta_3}{\sqrt{\hat s_R^2 (\tilde Q_{3,3} + \tilde Q_{4,4} - 2\tilde Q_{3,4}))}} \sim t_{n-k-1}
+\]</span></p>
+<pre class="r"><code>beta_var = vcov(m1)
+(t0 = (coef(m1)[3] - coef(m1)[4])/sqrt(beta_var[3,3] + beta_var[4,4] - 2*beta_var[3,4]))</code></pre>
+<pre><code>##    mom_iq 
+## 0.9987263</code></pre>
+<pre class="r"><code># pvalor
+2*pt(abs(t0), n - k - 1, lower.tail = F)</code></pre>
+<pre><code>##   mom_iq 
+## 0.318489</code></pre>
 </div>
 </div>
 
