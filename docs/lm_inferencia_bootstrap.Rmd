@@ -1,0 +1,184 @@
+---
+title: "Bootstrap"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Introducción
+
+El bootstrap es un método para estimar varianzas de estadísticos e intervalos de confianza utilizando simulaciones.
+
+# Estimación de la varianza con bootstrap
+
+Sea $\{X_1, X_2, \cdots,X_n\}$ una muestra aleatoria simple (luego los datos son independientes y con igual distribución). Y sea $T = f(X_1, X_2, \cdots,X_n)$ un estadístico, es decir, $T$ es cualquier función de los datos. Para calcular la varianza del estimador, $Var(T)$, el método bootstrap consiste en:
+
+- Paso 1: generar, mediante simulación, una muestra con reemplazamiento a partir de $\{X_1, X_2, \cdots,X_n\}$ que llamaremos $\{X_1^*, X_2^*, \cdots,X_n^*\}$.
+- Paso 2: Calcular la estimación de $T$ a partir de la muestra bootstrap: $T^* = f(X_1^*, X_2^*, \cdots,X_n^*)$.
+- Paso 3: Repetir los pasos 1 y 2 un total de B veces, obteniendo $T_1^{*},T_2^{*}, \ldots,T_B^{*}$.
+- Paso 4: estimar la varianza de $T$ mediante la varianza de $T_1^{*},T_2^{*}, \ldots,T_B^{*}$.
+
+Por ejemplo, sea el número de viajeros diarios de una determinada línea de autobuses interurbana durante 12 días seleccionados aleatoriamente:
+
+```{r}
+# muestra
+x = c(47,66,55,53,49,65,48,44,50,61,60,55)
+```
+
+Supongamos que el número de viajeros de un día determinado tiene distribución normal: $X_i \sim N(\mu,\sigma)$. El estadístico que vamos a considerar en este ejemplo es la media muestral
+
+$$
+T = \bar X = \frac{X_1 + X_2 + \cdots + X_{12}}{12}
+$$
+
+La varianza de este estadístico tiene solución teórica:
+
+$$
+Var(\bar X) = \frac{\sigma^2}{12}
+$$
+
+Como $\sigma^2$ no es conocido esta varianza no se puede calcular. sin embargo, se puede aproximar utilizando el estimador de $\sigma^2$, la varianza de la muestra $s^2_x$:
+
+$$
+Var(\bar X) \approx \frac{s^2_x}{12}
+$$
+
+```{r}
+var(x)/length(x)
+```
+
+Vamos a obtener otra aproximación a este valor utilizando el método bootstrap:
+
+```{r}
+set.seed(123)
+B = 1000
+medias = rep(0,B)
+for (b in 1:B){
+  replica = sample(x, replace = T)
+  medias[b] = mean(replica)
+}
+var(medias)
+```
+
+Otro ejemplo puede ser si consideramos como estadístico la **mediana muestral**. En este caso no hay una fórmula teórica como en el caso de la media muestral. Así que aplicamos diréctamente bootstrap:
+
+```{r}
+set.seed(123)
+B = 1000
+medianas = rep(0,B)
+for (b in 1:B){
+  replica = sample(x, replace = T)
+  medianas[b] = median(replica)
+}
+var(medianas)
+```
+
+# Estimación de intervalos de confianza utilizando bootstrap
+
+Hay varios métodos para calcular el intervalo de confianza de un parámetro $\theta$ con bootstrap. Nosotros vamos a utilizar el método de los percentiles:
+
+- Paso 1: generar, mediante simulación, una muestra con reemplazamiento a partir de $\{X_1, X_2, \cdots,X_n\}$ que llamaremos $\{X_1^*, X_2^*, \cdots,X_n^*\}$.
+- Paso 2: Calcular la estimación de $\theta$ a partir de la muestra bootstrap: $\theta^* = T(X_1^*, X_2^*, \cdots,X_n^*)$.
+- Paso 3: Repetir los pasos 1 y 2 un total de B veces, obteniendo $\theta_1^{*},\theta_2^{*}, \ldots,\theta_B^{*}$.
+- Paso 4: estimar el intervalo de $\theta$ mediante $(\theta_{\alpha/2}^{*},\theta_{1-\alpha/2}^{*})$.
+
+Supongamos que el número de viajeros de un día determinado tiene distribución normal: $X_i \sim N(\mu,\sigma)$. Vamos a calcular el intervalo de confianza de $\mu$. El intervalo teórico se calcula
+
+$$
+\bar x \pm t_{\alpha/2;n-1}*\sqrt{\frac{s_x^2}{n}}
+$$
+
+```{r}
+alfa = 0.05
+n = length(x)
+c(mean(x) + qt(alfa/2, n-1)*sqrt(var(x)/length(x)), mean(x) - qt(alfa/2, n-1)*sqrt(var(x)/length(x)) )
+```
+
+Vamos a calcularlo con bootstrap:
+
+```{r}
+set.seed(123)
+B = 1000
+medias = rep(0,B)
+for (b in 1:B){
+  replica = sample(x, replace = T)
+  medias[b] = mean(replica)
+}
+quantile(medias, c(alfa/2, 1-alfa/2))
+```
+
+En realidad tenemos la distribución del estimador de la media:
+
+```{r}
+hist(medias)
+```
+
+También podemos calcular el intervalo de confianza de la mediana:
+
+```{r}
+quantile(medianas, c(alfa/2, 1-alfa/2))
+```
+
+# Bootstrap en el modelo de regresión
+
+La hipótesis fundamental para poder aplicar bootstrap es que los datos tienen que ser independientes. En el caso del modelo de regresión, la opción es muestrear los residuos ya que son independientes. El método consiste en:
+
+- Paso 1: estimar el modelo de regresión $y = X \hat \beta + e$ y calcular los residuos: $\{e_1, e_2, \cdots, e_n\}$.
+- Paso 2: generar, mediante simulación, una muestra con reemplazamiento a partir de $\{e_1, e_2, \cdots, e_n\}$ que llamaremos $\{e_1^*, e_2^*, \cdots, e_n^*\}$.
+- Paso 3: generar, a partir de los residuos bootstrap, una replica bootstrap de los datos: $y^* = X \hat \beta + e^*$.
+- Paso 4: estimar los parámetros del modelo a partir de la muestra bootstrap $y^* = X \hat \beta^* + e$.
+- Paso 5: Repetir los pasos 2, 3 y 4 un total de B veces, obteniendo $\beta_1^{*},\beta_2^{*}, \ldots,\beta_B^{*}$.
+- Paso 6: calcular la varianza de los estimadores o los intervalos de confianza de los parámetros a partir de los valores calculados en el paso 5.
+
+Por ejemplo, vamos a calcular la varianza de los estimadores y los intervalos de confianza para el modelo:
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+```
+
+```{r}
+m1 = lm(kid_score ~ mom_iq + mom_hs, data = d)
+beta_e = coef(m1)
+```
+
+```{r}
+# BOOTSTRAP
+# residuos
+e = resid(m1)
+# matrix de las X
+X = model.matrix(m1)
+# muestreamos los residuos CON REPOSICION
+B = 1000
+beta_e_b = matrix(0, nrow = B, ncol = 3)
+for (i in 1:B){
+  eb = sample(e, rep = T)
+  yb = X %*% beta_e + eb
+  mb = lm(yb ~ mom_iq + mom_hs, data = d)
+  beta_e_b[i,] = coef(mb)
+}
+```
+
+- Varianza de los parémetros estimados
+
+```{r}
+# aplicando la teoría
+diag(vcov(m1))
+# aplicando bootstrap
+apply(beta_e_b, 2, var)
+```
+
+- intervalos de confianza
+
+```{r}
+# aplicando la teoría
+confint(m1)
+# aplicando bootstrap
+t(apply(beta_e_b, 2, quantile, probs = c(0.025,0.975)))
+```
+

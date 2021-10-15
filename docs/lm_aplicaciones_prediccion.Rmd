@@ -1,0 +1,385 @@
+---
+title: "Aplicaciones del modelo de regresión lineal: cálculo de predicciones"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Aplicaciones de la regresión
+
+Podemos identificar dos aplicaciones básicas de los modelos de regresión:
+
+- Predecir.
+- Describir relaciones entre variables.
+
+# Predicción del valor medio
+
+Sea el modelo de regresión
+
+$$
+y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki} + u_i, \ i = 1,2,\cdots,n
+$$
+
+Este modelo se puede escribir como:
+
+$$
+y_i = 
+\begin{bmatrix}
+1 & x_{1i} & x_{2i} & \cdots & x_{ki}
+\end{bmatrix}
+\begin{bmatrix}
+\beta_0 \\ \beta_1 \\ \beta_2 \\ \cdots \\ \beta_k
+\end{bmatrix}
++ u_i
+=
+x_i^T \beta + u_i, \ i = 1,2,\cdots,n
+$$
+
+Si consideramos un dato que no está incluido en la muestra, $x_p^T = [1 \ x_{1p} \ x_{2p} \ \cdots \ x_{kp}]$, se tiene que cumplir que
+
+$$
+y_p = x_p^T \beta + u_p, \quad u_p \sim N(0,\sigma^2)
+$$
+
+Por tanto:
+
+$$
+E[y_p] = E[x_p^T \beta + u_p] = x_p^T \beta
+$$
+
+Se define la predicción de $E[y_p]$ como:
+
+$$
+\hat y_p = x_p^T \hat \beta
+$$
+
+Este valor es un estimador centrado de $E[y_p]$:
+
+$$
+E[\hat y_p] = E[x_p^T \hat \beta] = x_p^T E[\hat \beta] = x_p^T \beta
+$$
+
+
+Por tanto $\hat y_p$ es la predicción del valor medio en $x_p$.
+
+# Varianza de la predicción del valor medio 
+
+## Con matrices de datos
+
+La varianza se calcula como:
+
+$$
+Var[\hat y_p] = Var[x_p^T \hat \beta] = x_p^T Var[\hat \beta] x_p = \sigma^2 x_p^T (X^TX)^{-1} x_p = \sigma^2 v_p
+$$
+
+donde 
+
+$$
+v_p = x_p^T (X^TX)^{-1} x_p
+$$
+
+## Con matrices de covarianzas
+
+Se tiene que 
+
+$$
+\hat y_p = x_p^T \hat \beta = \hat \beta_0 +
+\begin{bmatrix}
+x_{1p} & x_{2p} & \cdots & x_{kp}
+\end{bmatrix}
+\begin{bmatrix}
+\hat \beta_1 \\ \hat \beta_2 \\ \cdots \\ \hat \beta_k
+\end{bmatrix}
+=
+\hat \beta_0 + \tilde x_p^T \hat \beta^*
+$$
+
+Por otro lado hemos visto que
+
+$$
+\bar y = \beta_0 + \beta_1 \bar x_{1} + \beta_2 \bar x_{2} + \cdots + \beta_k \bar x_{k} = \hat \beta_0 + \bar x^T \hat \beta^*
+$$
+
+donde $\bar x^T = [\bar x_{1} \ \bar x_{2} \ \cdots \ \bar x_{k}]$. Despejando $\hat \beta_0$ y sustituyendo en la otra ecuación se obtiene
+
+$$
+\hat y_p = \bar y + (\tilde x_p - \bar x)^T \hat \beta^*
+$$
+
+Por tanto:
+
+$$
+Var[\hat y_p] = Var[\bar y] + (\tilde x_p - \bar x)^T Var[\hat \beta^*] (\tilde x_p - \bar x)
+$$
+
+En los temas anteriores se ha visto que $Var[\bar y] = \frac{\sigma^2}{n}$ y que $Var[\hat \beta^*] = \frac{\sigma^2}{n-1} S_{XX}^{-1}$. Por tanto:
+
+$$
+Var[\hat y_p] =  \frac{\sigma^2}{n} + \frac{\sigma^2}{n-1} (\tilde x_p - \bar x)^T S_{XX}^{-1} (\tilde x_p - \bar x) = \sigma^2 v_p
+$$
+
+donde en este caso 
+
+$$
+v_p = \frac{1}{n} + \frac{1}{n-1} (\tilde x_p - \bar x)^T S_{XX}^{-1} (\tilde x_p - \bar x)
+$$
+
+# Intervalo de confianza de la predicción del valor medio
+
+Primero vamos a deducir la distribución de $\hat y_p = x_p^T \hat \beta$. Como $\hat \beta$ tiene distribución normal, se tiene que:
+
+$$
+\hat y_p \sim N(x_p^T \beta, \sigma^2 v_p) \Rightarrow \frac{\hat y_p - x_p^T \beta}{se(\hat y_p)} \sim t_{n-k-1}
+$$
+
+donde $se(\hat y_p) = \hat s_R\sqrt{v_p}$. Finalmente, el intervalo de confianza para $E[y_p] = x_p^T \beta$ es:
+
+$$
+\hat y_p - t_{\alpha/2} se(\hat y_p) \leq (x_p^T \beta) \leq \hat y_p + t_{\alpha/2} se(\hat y_p)
+$$
+
+Recordad que los intervalos de confianza se definen para parámetros del modelo. En este caso el intervalo de confianza se ha definido para una combinación lineal de parámetros.
+
+# Intervalo de predicción
+
+El valor real para $x_p$ es $y_p$ y no $\hat y_p$. Por tanto tenemos un error de predicción:
+
+$$
+\epsilon_p = y_p - \hat y_p = y_p - x_p^T \hat \beta
+$$
+
+La variable aleatoria $\epsilon_p$ no es un residuo. Los residuos se definen para datos observados. Como $y_p = x_p^T \beta + u_p$, donde $u_p \sim N(0,\sigma^2)$, se tiene que:
+
+$$
+y_p \sim N(x_p^T \beta, \sigma^2)
+$$
+
+Nos gustaría construir un intervalo $(a,b)$ para $y_p$ tal que:
+
+$$
+P(a \leq y_p \leq b) = 1-\alpha
+$$
+
+Sin enbargo no podemos utilizar la distribución de $y_p$ ya que desconocemos $\beta$ y $\sigma^2$.
+
+Por otro lado, acabamos de encontrar que
+
+$$
+\hat y_p \sim N(x_p^T \beta, \sigma^2 v_p)
+$$
+
+Por tanto podemos averiguar la distribución de $\epsilon_p = y_p - \hat y_p$:
+
+$$
+\epsilon_p \sim N(0, \sigma^2(1 + v_p))
+$$
+
+ya que:
+
+$$
+E[\epsilon_p] = E[y_p] - E[\hat y_p] = x_p^T \beta - x_p^T \beta = 0
+$$
+
+$$
+Var[\epsilon_p] = Var[y_p] + Var[\hat y_p] = \sigma^2 + \sigma^2 v_p= \sigma^2 (1 + v_p)
+$$
+
+donde se ha considerado que $y_p$ e $\hat y_p$ son independientes. Utilizando la varianza residual tenemos:
+
+$$
+\frac{\epsilon_p}{\hat s_R\sqrt{1 + v_p}} \sim t_{n-k-1}
+$$
+
+Con lo que se puede encontrar que:
+
+$$
+P \left( - t_{\alpha/2} \hat s_R\sqrt{1 + v_p} \leq \epsilon_p \leq t_{\alpha/2} \hat s_R\sqrt{1 + v_p} \right) = 1 - \alpha
+$$
+
+Finalmente, el intervalo para $y_p$ que estábamos buscando se calcula como:
+
+$$
+P \left( \hat y_p - t_{\alpha/2} \hat s_R\sqrt{1 + v_p} \leq y_p \leq \hat y_p + t_{\alpha/2} \hat s_R\sqrt{1 + v_p} \right) = 1 - \alpha
+$$
+
+Esto no es un intervalo de confianza ya que $y_p$ no es un parámetro, sino que es un intervalo de probabilidad ($y_p$ es una variable aleatoria).
+
+# Conclusiones
+
+Sea un valor para los regresores $x_p$. Según el modelo $y_p = x_p^T \beta + u_p, \ u_p \sim N(0, \sigma^2)$:
+
+- Si queremos asignar un *valor puntual* para la predicción de $y_p$ utilizaremos $\hat y_p = x_p^T \hat \beta$, que es un estimador centrado de $x_p^T \beta$.
+- Si queremos construir un intervalo para la predicción en el punto $x_p$ utilizaremos el intervalo de $y_p$.
+
+# Ejemplo
+
+```{r}
+d = read.csv("datos/kidiq.csv")
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+d$mom_work = factor(d$mom_work, labels = c("notrabaja", "trabaja23", "trabaja1_parcial", "trabaja1_completo"))
+```
+
+## Predicción en un modelo de regresión simple
+
+```{r}
+m = lm(kid_score ~ mom_iq, data = d)
+plot(d$mom_iq, d$kid_score, pch = 19)
+abline(m, col = "red", lwd = 1)
+```
+
+### Prediccion del valor medio
+
+```{r}
+xp = matrix(c(1, 130), ncol = 1)
+n = nrow(d)
+beta_e = coef(m)
+sR2 = sum(resid(m)^2)/(n-2)
+X = model.matrix(m)
+(vp = t(xp) %*% solve(t(X) %*% X) %*% xp)
+# predicción puntual
+(yp_medio = t(xp) %*% beta_e)
+# intervalo de confianza
+yp_medio[1,1] + c(-1,1)*qt(0.975,n-2)*sqrt(sR2*(vp[1,1]))
+```
+
+```{r}
+# para comprobar, vamos a calcular vp con la matriz de covarianzas
+Sxx = var(d$mom_iq)
+xp1 = 130
+xm = mean(d$mom_iq)
+(vp1 = 1/n + 1/(n-1)*(xp1 - xm)^2*1/Sxx)
+```
+
+En R:
+
+```{r}
+xp1 = data.frame(mom_iq = 130)
+(yp_medio1 = predict(m, newdata = xp1, interval = "confidence", level = 0.95))
+```
+
+```{r}
+plot(d$mom_iq, d$kid_score, pch = 19)
+abline(m, col = "red", lwd = 1)
+points(xp1$mom_iq, yp_medio1[1], col = "red", pch = 19) # prediccion puntual
+points(xp1$mom_iq, yp_medio1[2], col = "red", pch = 19) # limite inferior int. conf.
+points(xp1$mom_iq, yp_medio1[3], col = "red", pch = 19) # limite superior int. conf.
+```
+
+### Intervalo de prediccion
+
+```{r}
+(yp = yp_medio[1,1] + c(-1,1)*qt(0.975,n-2)*sqrt(sR2*(1 + vp[1,1])))
+```
+
+- En R:
+
+```{r}
+(yp1 = predict(m, newdata = xp1, interval = "prediction", level = 0.95))
+```
+
+```{r}
+plot(d$mom_iq, d$kid_score, pch = 19)
+abline(m, col = "red", lwd = 1)
+points(xp1$mom_iq, yp_medio1[1], col = "red", pch = 19) # prediccion puntual
+points(xp1$mom_iq, yp_medio1[2], col = "red", pch = 19) # limite inferior int. conf.
+points(xp1$mom_iq, yp_medio1[3], col = "red", pch = 19) # limite superior int. conf.
+points(xp1$mom_iq, yp1[2], col = "green", pch = 19) # limite inferior int. pred.
+points(xp1$mom_iq, yp1[3], col = "green", pch = 19) # limite superior int. pred.
+```
+
+
+## Predicción en un modelo de regresión múltiple
+
+Vamos a predecir:
+
+- mom_iq = 130
+- mon_hs = no
+- mom_age = 25
+- mom_work = trabaja1_parcial
+
+```{r}
+m2 = lm(kid_score ~ mom_iq + mom_hs + mom_age + mom_work, data = d)
+summary(m2)
+```
+
+### Prediccion del valor medio
+
+Recordamos que el modelo sería: 
+
+$$
+kid\_score = \hat \beta_0 + \hat \beta_1 mom\_iq + \hat \beta_2 mom\_hssi + \hat \beta_3 mon\_age + \hat \beta_4mom\_worktrabaja23 + \\
+\hat \beta_5 mom\_worktrabaja1\_parcial + \hat \beta_6 mom\_worktrabaja1\_completo + e
+$$
+
+```{r}
+xp = matrix(c(1, 130, 0, 25, 0, 1, 0), ncol = 1)
+beta_e = coef(m2)
+k = 6 # numero de regresores
+sR2 = sum(resid(m2)^2)/(n-k-1)
+X = model.matrix(m2)
+(vp = t(xp) %*% solve(t(X) %*% X) %*% xp)
+# prediccion del valor medio
+(yp_medio = t(xp) %*% beta_e)
+# intervalo de confianza
+yp_medio[1,1] + c(-1,1)*qt(0.975,n-k-1)*sqrt(sR2*(vp[1,1]))
+```
+
+```{r}
+# para comprobar, vamos a calcular vp con la matriz de covarianzas
+X1 = X[,2:(k+1)]
+Sxx = var(X1)
+xp1 = xp[2:(k+1),]
+xm = colMeans(X1)
+(vp1 = 1/n + 1/(n-1)*t(xp1 - xm) %*% solve(Sxx) %*% (xp1 - xm) )
+```
+- En R:
+
+```{r}
+xp1 = data.frame(mom_iq = 130, mom_hs = "no", mom_age = 25, mom_work = "trabaja1_parcial")
+(yp_medio1 = predict(m2, newdata = xp1, interval = "confidence", level = 0.95))
+```
+
+### Intervalo de prediccion
+
+```{r}
+(yp = yp_medio[1,1] + c(-1,1)*qt(0.975,n-k-1)*sqrt(sR2*(1 + vp[1,1])))
+```
+
+- En R:
+
+```{r}
+(yp1 = predict(m2, newdata = xp1, interval = "prediction", level = 0.95))
+```
+
+# Predicciones utilizando bootstrap
+
+## Intervalo de confianza para el valor medio
+
+Vamos a calcular el intervalo de confianza utilizando bootstrap:
+
+```{r}
+B = 1000
+yp_medio_b = rep(0,B)
+e = resid(m2)
+for (b in 1:B){
+  eb = sample(e, replace = T)
+  yb = fitted(m2) + eb
+  mb = lm(yb ~ mom_iq + mom_hs + mom_age + mom_work, data = d)
+  yp_medio_b[b] = predict(mb, newdata = xp1, interval = "none", level = 0.95)
+}
+```
+
+El intervalo de confianza para el valor medio es:
+
+```{r}
+quantile(yp_medio_b, probs = c(0.025, 0.975))
+```
+
+## Intervalo de predicción
+
+En este caso no se puede utilizar bootstrap. El método bootstrap se utiliza para calcular intervalos de confianza y se basa en remuestrear residuos. E $y_p$ es una variable aleatoria, no unos residuos. 
