@@ -37,7 +37,7 @@ output:
 4. Diagnosis
     a. [Análisis de los residuos del modelo](lm_diagnosis.html) [(pdf)](lm_diagnosis.pdf)
 5. Ejemplo
-    a. [Ejemplo](lm_ejemplo1.html) [(pdf)](lm_ejemplo1.pdf)
+    a. [Ejemplo completo de regresión lineal](lm_ejemplo1.html) [(pdf)](lm_ejemplo1.pdf)
 6. Extensiones del modelo lineal
     a. [Regresores polinómicos](lm_extensiones_polinomios.html) [(pdf)](lm_extensiones_polinomios.pdf)
     b. [Splines](lm_extensiones_splines.html) [(pdf)](lm_extensiones_splines.pdf)

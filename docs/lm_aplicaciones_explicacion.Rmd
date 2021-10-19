@@ -143,7 +143,7 @@ $$
 Tomando diferenciales:
 
 $$
-\frac{d \mathrm{E}[y_i]}{\mathrm{E}[y_i]} = \beta_1 d x_i \Rightarrow \beta_1 = \frac{\Delta \mathrm{E}[y_i] / \mathrm{E}[y_i]}{\Delta x_i}
+\frac{d \mathrm{E}[y_i]}{\mathrm{E}[y_i]} = \beta_1 d x_i \Rightarrow \frac{\Delta \mathrm{E}[y_i]}{\mathrm{E}[y_i]} \approx \beta_1 \Delta x_i
 $$
 
 Es decir, un incremento de una unidad de x produce un incremento del $\beta_1$% de y.

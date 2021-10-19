@@ -1,0 +1,242 @@
+---
+title: "Ejemplo de regresión lineal"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+
+# Datos
+
+```{r}
+d = read.csv("datos/Advertising.csv")
+str(d)
+```
+
+- sales: en miles de unidades
+- TV, radio, newspaper: presupuesto de publicidad, en miles de dolares
+
+# Modelo 1
+
+## Estimación
+
+```{r}
+m1 = lm(sales ~ TV + radio + newspaper, data = d)
+summary(m1)
+```
+
+- $\hat \beta_0$ = 2.94. Como p-valor < $\alpha$, es un parámetro significativo.
+- $\hat \beta_1$ = 0.05. Si mantenemos la inversión en *radio* y *newspaper* constante, un incremento de 1000 $ en TV, por término medio supone un aumento en las ventas de 0.05*1000 = 50 unidades. Según el pvalor, es un parámetro significativo.
+- $\hat \beta_2$ = 0.19. Si mantenemos la inversión en *TV* y *newspaper* constante, un incremento de 1000 $ en TV, por término medio supone un aumento en las ventas de 190 unidades. Según el pvalor, es un parámetro significativo.
+- $\hat \beta_3$ = -0.001. Según el pvalor, es un parámetro **NO** significativo, luego no influye en las ventas. Sin embargo, si analizamos la regresión simple de *newspaper*:
+
+La variable *newspaper* ha resultado no significativa. Puede deberse a dos cosas:
+
+- Que no está relacionada con *sales*. Esto lo comprobamos con una regresión simple:
+
+```{r}
+m1a = lm(sales ~ newspaper, data = d)
+summary(m1a)
+```
+
+luego si está relacionada.
+
+- que no aporte información adicional a la que ya aportan *TV* y *radio*. Esto sucede si la correlación con alguna de las variables es considerable:
+
+```{r}
+cor(d[,-1])
+```
+
+Como vemos, la correlación entre radio y newspaper es 0.35, lo que indica que en los mercados donde se invierte en *radio* también se invierte en *newspaper*. Luego parte de la información contenida en *newspaper* ya está contenida en *radio*, luego no aporta información significativa si inclimos las dos variables en el mismo modelo:
+
+```{r}
+m1b = lm(sales ~ radio + newspaper, data = d)
+summary(m1b)
+```
+
+Por tanto, vamos a quitar newspaper:
+
+```{r}
+m2 = lm(sales ~ TV + radio, data = d)
+summary(m2)
+```
+
+## Comprobación de las hipótesis del modelo
+
+```{r}
+par(mfrow=c(2,2))
+plot(m2)
+```
+
+Como vemos, no se cumple linealidad. Una solución simple consiste en usar transformaciones no-lineales de las X. Las más comunes son: $\log(X), \sqrt{X}, X^2, 1/X$.
+
+Podemos comprobar que ninguna de ellas corrige la linealidad. Sin embargo, si aplicamos logaritmos a la variable respuesta:
+
+```{r}
+m3 = lm(log(sales) ~ TV + radio, data = d)
+par(mfrow=c(2,2))
+plot(m3)
+```
+
+```{r}
+summary(m3)
+```
+
+se cumplen razonablemente las hipótesis del modelo. Podemos responder a las preguntas:
+
+- ¿Hay relación entre el gasto en publicidad y las ventas?
+
+Podemos utilizar el contraste general de regresión $H_0 : \beta_1 = \beta_2 = 0$, con pvalor < 2.2e-16., luego hay evidencia clara de la relación entre gasto y ventas.
+
+- ¿Es grande esa relación?
+
+Podemos mirar el $R^2$ = 0.80, luego estamos explicando el 80% de la variabilidad de los datos con este modelo.
+
+- ¿Que medios contribuyen a las ventas?
+
+Viendo los contrastes individuales, contribuyen la radio y la TV, pero no newspaper.
+
+- ¿Como de grande es el efecto de cada medio?
+
+Mirando las $\beta_i$, tiene 3 veces más efecto invertir en radio que en TV.
+
+- ¿Cual es la precisión de estos valores?
+
+Podemos mirar los *se*:
+
+```{r}
+sqrt(diag(vcov(m3)))
+```
+
+O los intervalos de confianza:
+
+```{r}
+confint(m3)
+```
+
+- ¿Como de precisas son las predicciones?
+
+Valor medio predicho - intervalo de confianza del valor medio predicho:
+
+```{r}
+xp = data.frame(TV = 50, radio = 40, newspaper = 60)
+exp(predict(m3, newdata = xp, level = 0.95, interval="confidence"))
+```
+
+Valor medio predicho - intervalo de predicción:
+
+```{r}
+exp(predict(m3, newdata = xp, level = 0.95, interval="prediction"))
+```
+
+# Extensiones del modelo lineal
+
+El problema con los residuos también se puede deber a que no se han incluido los regresores adecuados:
+
+## Términos de interacción
+
+```{r}
+m4 = lm(sales ~ TV * radio, data = d)
+summary(m4)
+```
+
+El modelo mejora considerablemente el R$^2$. Luego invertir dinero en *radio* también mejora la inversión en *TV*.
+
+$sales = \beta_0 + \beta_1*TV + \beta_2*radio + \beta_3*TV*radio + u$
+
+$sales = \beta_0 + (\beta_1 + \beta_3*radio)*TV + \beta_2*radio  + u$
+
+La linealidad también ha mejorado:
+
+```{r}
+par(mfrow=c(2,2))
+plot(m4)
+```
+
+Aún hay que mejorar los residuos.
+
+## Términos no lineales
+
+```{r}
+par(mfrow=c(1,2))
+plot(d$TV, d$sales)
+abline(lm(sales ~ TV, data = d))
+plot(d$radio, d$sales)
+abline(lm(sales ~ radio, data = d))
+```
+
+Parece que la relación con TV es de orden 2 o 3:
+
+```{r}
+m5 = lm(sales ~ TV * radio + I(TV^2), data = d)
+summary(m5)
+```
+
+Comprobamos los residuos:
+
+```{r}
+par(mfrow=c(2,2))
+plot(m5)
+```
+
+Podemos mejorar un poco mas:
+
+```{r}
+m6 = lm(sales ~ TV * radio + I(TV^2) + I(TV^3), data = d)
+summary(m6)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(m6)
+```
+
+
+Podemos responder a las preguntas:
+
+- ¿Hay relación entre el gasto en publicidad y las ventas?
+
+Podemos utilizar el contraste general de regresión $H_0 : \beta_1 = ... = \beta_5 = 0$, con pvalor < 2.2e-16., luego hay evidencia clara de la relación entre gasto y ventas.
+
+- ¿Es grande esa relación?
+
+Podemos mirar el $R^2$ = 0.99, luego estamos explicando el 99% de la variabilidad de los datos con este modelo.
+
+- ¿Que medios contribuyen a las ventas?
+
+Viendo los contrastes individuales, contribuyen la radio y la TV, su interacción, y terminos polinómicos de la TV.
+
+- ¿Como de grande es el efecto de cada medio?
+
+Es más complicado ver el efecto que en el modelo m3, pero mirando sólo los efectos principales ya que son los más importantes, invertir en TV es más rentable.
+
+- ¿Cual es la precisión de estos valores?
+
+Podemos mirar los *se*:
+
+```{r}
+sqrt(diag(vcov(m6)))
+```
+
+O los intervalos de confianza:
+
+```{r}
+confint(m6)
+```
+
+- ¿Como de precisas son las predicciones?
+
+Si miramos la predicción del valor medio:
+
+```{r}
+xp = data.frame(TV = 50, radio = 40, newspaper = 60)
+exp(predict(m3, newdata = xp, level = 0.95, interval="confidence"))
+predict(m6, newdata = xp, level = 0.95, interval="confidence")
+```
+
+
