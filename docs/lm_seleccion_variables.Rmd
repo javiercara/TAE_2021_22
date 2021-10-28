@@ -1,0 +1,346 @@
+---
+title: "Comparación de modelos y selección de variables"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Introducción
+
+```{r}
+d = read.csv("datos/Hitters.csv")
+d = d[,-1]
+str(d)
+```
+
+Comprobamos si hay missing obsevations (NA) en el salario:
+
+```{r}
+sum(is.na(d$Salary))
+```
+
+Eliminamos estos datos:
+
+```{r}
+d = na.omit(d)
+```
+
+# Comparación de modelos
+
+Se pueden utilizar las siguientes métricas para comparar modelos:
+
+- R-cuadrado
+
+- Residual Sum of Squares, RSS: sum((observed - predicted)^2).
+
+- Mean Squared Error, MSE = mean((observed - predicted)^2). Cuanto menor sea el MSE, mejor.
+
+- Residual Standard Error, RSE = sum((observed - predicted)^2)/(n-k-1).
+
+- Mean Absolute Error, MAE = mean(abs(observed - predicted)).
+
+El problema con estas métricas es que dependen del número de regresores considerados. Por tanto se pueden utilizar para **comparar modelos con el mismo número de regresores**. Otras métricas que no tienen este problema son:
+
+- Akaike Information criteria:
+
+$$
+AIC = \frac{1}{n\hat{\sigma}^2}(RSS + 2k\hat{\sigma}^2)
+$$
+
+- Estadístico Cp de Mallows:
+
+$$
+Cp = \frac{1}{n}(RSS + 2k\hat{\sigma}^2)
+$$
+
+Cp y AIC son proporcionales, $C_p = AIC * \hat{\sigma}^2$.
+
+- Bayesian Information Criteria:
+
+$$
+BIC = \frac{1}{n}(RSS + \log(n)k\hat{\sigma}^2)
+$$
+
+- R-cuadrado ajustado:
+
+$$
+R^2-ajustado = 1 - \frac{RSS/(n-k-1)}{TSS/(n-1)}
+$$
+
+donde:
+
+- k: número de regresores.
+- $\hat{\sigma}^2$: estimación del error del modelo, la varianza residual.
+- RSS: Residual sum of squares
+
+$$
+RSS = \sum _{i=1}^n(y_i - \hat{y}_i)^2
+$$
+
+- TSS: Total Sum of Squares
+
+$$
+TSS = \sum _{i=1}^n(y_i - \bar{y}_i)^2
+$$
+
+Por último, se puede utilizar el método del subconjunto de validación y el de validación cruzada para comparar modelos, sobre todo **desde un punto de vista predictivo**.
+
+# Métodos de construcción de modelos a partir de un conjunto de variables
+
+## Selección de variables significativas
+
+Algoritmo:
+
+1. Mp es el modelo con todos los regresores.
+2. Para k = p, ..., 1
+    a. Se estima el modelo con k regresores, Mk.
+    b. Se elimina la variable con mayor pvalor de los contrastes individuales.
+3. Elegir el modelo con el mayor número de regresores significativos.
+
+```{r}
+m_1 = lm(Salary ~ ., data = d)
+summary(m_1)
+```
+
+```{r}
+m_2 = lm(Salary ~ . - CHmRun, data = d)
+summary(m_2)
+```
+
+```{r}
+m_3 = lm(Salary ~ . - CHmRun - Years, data = d)
+summary(m_3)
+```
+
+Y así sucesivamente. Este método de suele utilizar cuando utilizamos el modelo para explicar relaciones entre variables, por lo que estamos interesados en variables significativas. Cuando el objetivo es predecir se utilizan los métodos que se indican a continuación.
+
+## Best subset selection
+
+Algoritmo:
+
+Para k = 1, 2, ..., p:
+
+- Estimar todos los modelos de *k* regresores (hay $\binom{p}{k}$ modelos posibles).
+- Elegir el que tenga menor RSS o mayor R$^2$. Este será el modelo M$_{k}$.
+
+
+```{r}
+library(leaps)
+m2 = regsubsets(Salary ~ ., data = d)
+summary(m2)
+```
+
+El resultado son los mejores 8 modelos (por defecto): 
+
+- la primera línea es el mejor modelo (en términos de R$^2$) de una variable. La variable seleccionada es la que aparece con un asterisco, **CRBI**.
+- la segunda linea es el mejor modelo (en términos de R$^2$) de dos variables, **Hits** y **CRBI**.
+- y así sucesivamente.
+
+Podemos seleccionar el numero de modelos que nos devuelve con *nvmax*:
+
+```{r}
+m_best = regsubsets(Salary ~ ., data = d, nvmax = 19)
+summary(m_best)
+```
+
+
+Podemos trabajar con R2 o con las otras métricas:
+
+```{r}
+m_best_summary = summary(m_best)
+names(m_best_summary)
+```
+
+
+```{r}
+plot(m_best_summary$adjr2, xlab = "Numero de variables", ylab = "R2 ajustado", type = "b")
+```
+
+Buscamos el máximo:
+
+```{r}
+which.max(m_best_summary$adjr2)
+```
+
+Si utilizamos el criterio del Cp (que es equivalente al AIC):
+
+```{r}
+plot(m_best_summary$cp, xlab = "Numero de variables", ylab = "Cp", type = "b")
+```
+
+```{r}
+which.min(m_best_summary$cp)
+```
+
+Justificación: el RSS disminuye con el número de regresores *k*. Por eso penalizamos incluyendo un término que contiene a *k*.
+
+Los coeficinetes estimados con ese modelo son:
+
+```{r}
+coef(m_best,10)
+```
+
+
+## Método Forward-Stepwise
+
+Algoritmo:
+
+1. M0 es el modelo sin regresores.
+2. Para k = 0, ..., (p-1)
+    a. A partir del modelo con *k* regresores, M$_k$, estimar todos los modelos posibles con (k+1) regresores.
+    b. Elegir el que tenga menor RSS o mayor R$^2$. Este será el modelo M$_{k+1}$.
+3. Elegir el mejor modelo de M0, ..., M$_{p}$ utilizando validación cruzada, Cp, AIC, BIC, R2-ajustado.
+
+
+```{r}
+m_fwd = regsubsets(Salary ~ ., data = d, nvmax = 19, method = "forward")
+summary(m_fwd)
+```
+
+```{r}
+m_fwd_summary = summary(m_fwd)
+which.min(m_fwd_summary$cp)
+```
+
+```{r}
+coef(m_fwd,10)
+```
+
+
+## Método Backward-Stepwise
+
+Algoritmo:
+
+1. Mp es el modelo con todos los regresores.
+2. Para k = p, ..., 1
+    a. A partir del modelo con *k* regresores, M$_k$, estimar todos los modelos posibles con (k-1) regresores.
+    b. Elegir el que tenga menor RSS o mayor R$^2$. Este será el modelo M$_{k-1}$.
+3. Elegir el mejor modelo de M0, ..., M$_{p}$ utilizando validación cruzada, Cp, AIC, BIC, R2 ajustado.
+
+
+```{r}
+m_bwd = regsubsets(Salary ~ ., data = d, nvmax = 19, method = "backward")
+summary(m_bwd)
+```
+
+```{r}
+m_bwd_summary = summary(m_bwd)
+which.min(m_bwd_summary$cp)
+```
+
+```{r}
+coef(m_bwd,10)
+```
+
+Es el mismo que antes.
+
+
+## Eligiendo el mejor modelo utilizando subconjuntos de validación
+
+```{r}
+set.seed(1)
+n = nrow(d)
+n_train = round(0.6*n)
+n_test = n - n_train
+
+pos = 1:n
+pos_train = sample(pos,n_train,replace = F) # muestreo sin reemplazamiento
+pos_test = pos[-pos_train]
+
+# dividimos los datos en training set y validation set
+datos_train = d[pos_train,]
+datos_test = d[pos_test,]
+```
+
+Estimamos todos los modelos posibles con los datos de entrenamiento
+
+```{r}
+m_val = regsubsets(Salary ~ ., data = datos_train, nvmax = 19)
+```
+
+Vamos calcular el error de prediccion (MSE) de este modelo en los datos test. Como no existe la funcion predecir a partir de modelos estimados con *regsubsets()*, se ha programado en ([descargar](funciones/regsubsets_predict.R)):
+
+```{r fundef}
+source("funciones/regsubsets_predict.R")
+predict.regsubsets
+```
+
+```{r}
+source("funciones/MSE.R")
+#
+mse_val = rep(0,19)
+for (i in 1:19){
+  pred_i = predict(m_val,datos_test,i)
+  mse_val[i] = MSE(datos_test$Salary,pred_i)
+}
+plot(mse_val, type = "b")
+```
+
+```{r}
+which.min(mse_val)
+```
+
+Para calcular los coeficientes del modelo de regresión finales, es preferible hacerlo con todos los datos:
+
+```{r}
+m_val_final = regsubsets(Salary ~ ., data = d, nvmax = 19)
+coef(m_val_final,6)
+```
+
+
+
+## Eligiendo el mejor modelo utilizando Cross-Validation
+
+Función para obtener las posiciones de train y de test:
+
+```{r}
+source("funciones/cross_val_pos.R")
+```
+
+Datos de los folds:
+
+```{r}
+num_folds = 10
+set.seed(1)
+pos = cross_val_pos(nrow(d),num_folds)
+```
+
+Calculamos el error cometido en cada fold por cada modelo:
+
+```{r}
+mse_cv = matrix(0, nrow = num_folds, ncol = 19)
+for (i in 1:num_folds){
+  # datos de training y de validation de cada fold
+  datos_train = d[pos$train[[i]],]
+  datos_test = d[pos$test[[i]],]
+  
+  m_cv = regsubsets(Salary ~ .,data = datos_train, nvmax = 19)
+  
+  for (j in 1:19){
+    pred = predict(m_cv,newdata = datos_test, id = j)
+    mse_cv[i,j] = MSE(datos_test$Salary,pred)
+  }
+}
+```
+
+```{r}
+mse_cv_med = apply(mse_cv, 2, mean)
+plot(mse_cv_med, type = "b")
+```
+
+El que tiene menor error es el de 9 variables. Lo aplicamos a todos los datos:
+
+```{r}
+m_cv_final = regsubsets(Salary ~ ., data = d, nvmax = 19)
+coef(m_cv_final,9)
+```
+
+
+
+
+

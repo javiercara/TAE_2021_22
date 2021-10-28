@@ -1,0 +1,73 @@
+---
+title: "Extensiones del modelo lineal: modelos aditivos"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Modelo
+
+- Los extensiones del modelo lineal estudiados hasta ahora utilizan solo un regresor.
+- Los Modelos Aditivos constituyen la manera natural de extender el modelo:
+- Datos: $\{y_i, x_{1i}, x_{2i}, \ldots, x_{pi}\}, \ i=1, \ldots, n$
+
+$$
+y_i = \beta_0 + f(x_{1i}) + f(x_{2i}) + \cdots + f(x_{pi}) + u_i
+$$
+
+donde cada $f(x_i)$ puede ser un polinomio, un spline, un término $\beta_k x_{ki}$, una interacción,...
+
+# Ejemplo
+
+```{r}
+d = read.csv("datos/Wage.csv")
+d = d[d$wage<250,]
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey", ylab = "wage (x 1000 $)", xlab = "age")
+```
+
+Queremos trabajar con el modelo:
+
+$$
+wage \sim \beta_0 + f_1(year) + f_2(age) + f_3(education) + \epsilon
+$$
+
+
+- Cuando las $f_i$ están datas en términos de **funciones base**, se puede estimar el modelo utilizando mínimos cuadrados:
+
+```{r}
+m1 = lm(wage ~ poly(age, degree = 3) + education, data = d)
+summary(m1)
+```
+
+```{r}
+m2 = lm(wage ~ year + poly(age, degree = 3) + education, data = d)
+summary(m2)
+```
+```{r}
+library(splines)
+m3 = lm(wage ~ ns(year, df = 4) + poly(age, degree = 3) + education, data = d)
+summary(m3)
+```
+
+- Comparamos los tres modelos con el contraste de la F:
+
+```{r}
+anova(m1,m2)
+```
+
+Los modelos no son equivalentes, y como en m2 ha salido significativo el coeficiente de year, nos quedamos con m2.
+
+```{r}
+anova(m2,m3)
+```
+
+Los modelos son equivalentes, nos quedamos con m2 ya que tiene menos parámetros.

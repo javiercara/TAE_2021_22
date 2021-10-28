@@ -21,6 +21,7 @@ $$
 Además se considera que $u_i \sim N(0,\sigma^2)$. Esta hipótesis implica:
 
 -   Normalidad
+-   Esperanza igual a cero: $E[u_i]=0$.
 -   Varianza constante: todos los $u_i$ tienen la misma varianza.
 -   Independepencia: $Cov[u_i,u_j] = 0 \ \forall i,j, \ i \neq j$
 
@@ -88,10 +89,9 @@ plot(fitted(m),residuals(m), xlab = "Valores predichos", ylab = "Residuos", ylim
 abline(h=0, lty = 2)
 ```
 
--   Este gráfico se utiliza para comprobar que la varianza de los residuos es constante (también conocido como homocedasticidad) y que el modelo es lineal.
--   Los residuos se deben distribuir homogéneamente a un lado y otro del eje X.
+-   Esperanza cero: los residuos se deben distribuir homogéneamente a un lado y otro del eje X.
+-   Varianza constante (también conocido como homocedasticidad): la varianza de los residuos es constante, la anchura de los residuos es constante.   
 -   Cuando hay heterocedasticidad la dispersión de los residuos suele aumentar con el valor de $\hat y_i$.
--   Cuando no hay linealidad se observa curvatura en los residuos.
 -   Por ejemplo, sean los datos:
 
 ```{r}
@@ -101,7 +101,7 @@ plot(fitted(m2),residuals(m2), xlab = "Valores predichos", ylab = "Residuos", yl
 abline(h=0, lty = 2)
 ```
 
-En este caso, no se cumple homocedasticidad ni linealidad.
+En este caso, no se cumple homocedasticidad ni esperanza cero. Esto último indica que el modelo lineal no es el adecuado.
 
 -   Los problemas de falta de linealidad se pueden corregir con transformaciones.
 -   Los problemas de varianza no constante se pueden corregir también con transformaciones.
@@ -130,7 +130,7 @@ q = (i-0.5)/n
 Qteoricos = qnorm(q)
 ```
 
--   Se representa Qteoria *vs* Qdatos.
+-   Se representa Qteoricos *vs* Qdatos.
 
 ```{r}
 plot(Qteoricos,Qdatos)
@@ -226,8 +226,6 @@ abline(h = -2*sR, lty = 2)
 boxplot(resid(msim1), horizontal = T)
 ```
 
-Este es un punto atípico pero no cambia mucho la estimación de los parámetros del modelo.
-
-Los atípicos pueden deberse a errores en la toma de los datos. En este caso se pueden eliminar del análisis. Si no estamos seguros de que es un error, no se aconseja eliminar los atípicos:
+Los atípicos pueden deberse a errores en la toma de los datos. En este caso se pueden eliminar del análisis. Pero otras veces no se corresponden con un error, por lo que si no estamos seguros de que es un error, no se aconseja eliminar los atípicos:
 
 *La NASA lanzó el satélite Nimbus 7 para registrar datos atmosféricos. Tiempo después, el British Antarctic Survey observó un descenso importante del ozono atmosférico en la Artártida que no se había detectado en los datos recogidos por dicho satélite. La causa fue que el sistema de recogida de datos no guardaba los datos que eran demasiado bajos ya que los consideraba errores. Esto motivó que la detección del agujero en la capa de ozono se retrasara varios años*.

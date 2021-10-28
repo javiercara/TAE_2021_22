@@ -1,0 +1,154 @@
+---
+title: "Validación cruzada"
+output: 
+  pdf_document:
+    number_sections: true
+    toc: true
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+---
+
+# Introducción
+
+Si el modelo se ajusta muy bien a los datos que hemos utilizado para estimarlo quiere decir que va a predecir bien dichos datos. Pero en la práctica, queremos el modelo para predecir datos que no conocemos. El objetivo es analizar la predicción del modelo frente a datos no conocidos.
+
+Los métodos explicados a continuación se emplean para comparar modelosdesde el punto de vista de la predicción.
+
+# El método del subconjunto de validación (validation set approach)
+
+- Dividimos en dos partes los datos (50%-50%, 40%-60%,...).
+- En el **training set** estimamos el modelo.
+- En el **test set** (**validation set**) predecimos la respuesta y calculamos el Mean Squared Error (MSE) entre la variable respuesta observada y la predicha.
+
+$$
+MSE = \frac{1}{n}\sum _{i=1}^{n}{(y_i - \hat y_i)^2}
+$$
+
+```{r}
+datos = read.csv("datos/Advertising.csv")
+str(datos)
+```
+
+- Dividimos los datos en training set y test set. En general, el training test ha de ser mayor o igual que el test set:
+
+```{r}
+n = nrow(datos)
+n_train = round(0.6*n)
+n_test = n - n_train
+
+set.seed(115)
+
+pos = 1:n
+pos_train = sample(pos, n_train, replace = F) # muestreo sin reemplazamiento
+pos_test = pos[-pos_train]
+
+# dividimos los datos en training set y validation set
+datos_train = datos[pos_train,]
+datos_test = datos[pos_test,]
+
+plot(datos_train$TV, datos_train$sales, pch = 19, col = "blue")
+points(datos_test$TV, datos_test$sales, pch = 19, col = "red")
+legend(x=0,y=25, legend=c("train","test"), fill=c("blue","red"))
+```
+
+- En el training set estimamos el modelo:
+
+```{r}
+m1 = lm(sales ~ TV, data = datos_train)
+
+# error en el training set
+y_train = datos_train$sales
+y_train_p = predict(m1,datos_train)
+```
+
+- Para calcular el MSE se puede utilizar la función ([descargar](funciones/MSE.R)):
+
+```{r}
+source("funciones/MSE.R")
+MSE # se muestra la definición de la funcion
+```
+
+```{r}
+(mse_train = MSE(y_train,y_train_p))
+```
+
+- Error en el test set: 
+
+```{r}
+y_test = datos_test$sales
+y_test_p = predict(m1,datos_test)
+
+(mse_test = MSE(y_test,y_test_p))
+```
+
+
+Problemas:
+
+- El MSE cambia en función de como se elija el training set y el validation set.
+
+- Sólo se incluye una parte de los datos para estimar el modelo, por lo que la estimación es peor que incluyéndolos a todos.
+
+# Validación cruzada ( k-fold Cross-Validation)
+
+Se divide aleatoriamente los datos en **k** partes (o folds). Cada parte tiene n1 = n/k datos.
+
+- Para  i = 1:k
+    - la parte i constituye el test set.
+    - las otras partes constituyen el train set.
+    - se calcula el MSE(i)
+- El error total es:
+
+$$
+MSE_{TOTAL} = \frac{1}{k} \sum _{i=1}^k MSE_i
+$$
+
+- Se ha programado una funcion que calcula las posiciones de train y test dado el numero de folds ([descargar](funciones/cross_val_pos.R)):
+
+```{r}
+source("funciones/cross_val_pos.R")
+cross_val_pos # se muestra el contenido de la función
+```
+
+Por ejemplo, supongamos que tenemos 10 datos y definimos 3 folds:
+
+```{r}
+set.seed(342)
+num_datos = 10
+num_folds = 3
+cross_val_pos(num_datos,num_folds)
+```
+
+Con los dados del ejemplo:
+
+```{r}
+# numero de folds
+num_folds = 5
+n = nrow(datos)
+
+# se definen las posiciones de test de cada fold
+pos = cross_val_pos(n,num_folds)
+
+error_k = rep(0,num_folds)
+for (k in 1:num_folds){
+  # datos de training y de test de cada fold
+  pos_test = pos$test[[k]]
+  pos_train = pos$train[[k]]
+  datos_train = datos[pos_train,]
+  datos_test = datos[pos_test,]
+  
+  # estimamos el modelo
+  mk = lm(sales ~ TV, data = datos_train)
+  
+  # error de prediccion
+  yk = datos_test$sales
+  yk_p = predict(mk,datos_test)
+  
+  error_k[k] = MSE(yk,yk_p)
+}
+(errork_media = mean(error_k))
+```
+
+
+

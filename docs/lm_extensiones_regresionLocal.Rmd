@@ -1,0 +1,120 @@
+---
+title: "Extensiones del modelo lineal: regresión local"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Algoritmo
+
+- Para $x_i, \ i = 1, \ldots, n$:
+    - Se eligen un total de $k = s * n$ puntos alrededor de $x_i$.
+    - Se ajusta un modelo de regresión lineal en $x_i$ utilizando los *k* puntos.
+    - Los modelos más utilizados son la recta y el polinomio de segundo orden.
+    - El valor predicho en cada punto es $x_i \Rightarrow \hat f(x_i) = X \hat \beta$.
+- El parámetro *s* controla la suavidad de la curva ($s \in [0,1]$).
+- Se pueden estimar otras funciones polinómicas distintas a la recta.
+
+# Estimacion del modelo
+
+```{r}
+d = read.csv("datos/Wage.csv")
+d = d[d$wage<250,]
+d = d[d$wage<250,]
+```
+
+```{r}
+m1 = loess(wage ~ age, data = d, span = 0.2, degree = 2)
+m2 = loess(wage ~ age, data = d, span = 0.5, degree = 2)
+summary(m1)
+```
+
+# Prediccion
+
+## Predicción puntual
+
+```{r}
+age_grid = seq(from = min(d$age), to = max(d$age), by = 1)
+# con loess hay que utizar se = T, ya que interval = "" no funciona
+yp1 = predict(m1, newdata = data.frame(age = age_grid), se = T)
+yp2 = predict(m2, newdata = data.frame(age = age_grid), se = T)
+```
+
+```{r}
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey", ylab = "wage (x 1000 $)", xlab = "age")
+#
+lines(age_grid, yp1$fit, col = "blue", lwd = 2)
+lines(age_grid, yp2$fit, col = "red", lwd = 2)
+#
+legend(60,200, legend = c("s = 0.2", "s = 0.5"), col = c("blue","red"), lty = 1, lwd = 2)
+```
+
+## Intervalo de confianza
+
+Recordemos que:
+
+$$
+\hat y_p - t_{\alpha/2} se(\hat y_p) \leq E[y_p] \leq \hat y_p + t_{\alpha/2} se(\hat y_p)
+$$
+
+Por tanto:
+
+```{r}
+alfa = 0.05
+yp11 = yp1$fit + qnorm(alfa/2)*yp1$se.fit # utilizamos la normal en lugar de la t-student
+yp12 = yp1$fit + qnorm(1-alfa/2)*yp1$se.fit
+```
+
+```{r}
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey", ylab = "wage (x 1000 $)", xlab = "age")
+#
+lines(age_grid, yp1$fit, col = "blue", lwd = 2)
+lines(age_grid, yp11, col = "blue", lty = 3)
+lines(age_grid, yp12, col = "blue", lty = 3)
+```
+
+## Intervalo de predicción
+
+En regresión lineal se tenía que:
+
+$$
+\hat y_p - t_{\alpha/2} \hat s_R\sqrt{1 + v_p} \leq y_p \leq \hat y_p + t_{\alpha/2} \hat s_R\sqrt{1 + v_p}
+$$
+
+y además $se(\hat y_p) = \hat s_R\sqrt{v_p}$. Por tanto, el intervalo de predicción se puede calcular usando:
+
+$$
+\hat y_p - t_{\alpha/2} \sqrt{\hat s_R^2 + se(\hat y_p)} \leq y_p \leq \hat y_p + t_{\alpha/2} \sqrt{\hat s_R^2 + se(\hat y_p)}
+$$
+
+
+
+
+
+
+```{r}
+sR = m1$s
+alfa = 0.05
+yp13 = yp1$fit + qnorm(alfa/2)*sqrt(sR^2 + yp1$se.fit^2)
+yp14 = yp1$fit + qnorm(1-alfa/2)*sqrt(sR^2 + yp1$se.fit^2)
+```
+
+```{r}
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey", ylab = "wage (x 1000 $)", xlab = "age")
+#
+lines(age_grid, yp1$fit, col = "blue", lwd = 2)
+lines(age_grid, yp11, col = "blue", lty = 3)
+lines(age_grid, yp12, col = "blue", lty = 3)
+#
+lines(age_grid, yp13, col = "red", lty = 3)
+lines(age_grid, yp14, col = "red", lty = 3)
+```

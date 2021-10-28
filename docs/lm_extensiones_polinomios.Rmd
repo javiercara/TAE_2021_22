@@ -1,0 +1,263 @@
+---
+title: "Extensiones del modelo lineal: regresores polinómicos"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Datos
+
+Datos: Wage
+
+Wage and other data for a group of 3000 male workers in the Mid-Atlantic region.
+
+```{r}
+d = read.csv("datos/Wage.csv")
+str(d)
+```
+
+A data frame with 3000 observations on the following 11 variables:
+
+- year: Year that wage information was recorded
+- age: Age of worker
+- maritl: A factor with levels 1. Never Married 2. Married 3. Widowed 4. Divorced and 5. Separated indicating marital status
+- race: A factor with levels 1. White 2. Black 3. Asian and 4. Other indicating race
+- education: A factor with levels 1. < HS Grad 2. HS Grad 3. Some College 4. College Grad and 5. Advanced Degree indicating education level
+- region: Region of the country (mid-atlantic only)
+- jobclass: A factor with levels 1. Industrial and 2. Information indicating type of job
+- health: A factor with levels 1. <=Good and 2. >=Very Good indicating health level of worker
+- health_ins: A factor with levels 1. Yes and 2. No indicating whether worker has health insurance
+- logwage: Log of workers wage
+- wage: Workers raw wage
+
+```{r}
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey")
+```
+
+Parece que hay dos grupos diferenciados: los que ganan más de 250.000$ y los que ganan menos. Vamos a trabajar con los que ganan menos
+
+```{r}
+d = d[d$wage<250,]
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey")
+```
+
+# Regresión polinómica
+
+## Introducción
+
+Utilizar una recta no es satisfactorio
+
+```{r}
+m0 = lm(wage ~ age, data = d)
+summary(m0)
+```
+
+```{r}
+plot(d$age,d$wage, cex = 0.5, col = "darkgrey")
+abline(m0, col = "red", lwd = 2)
+```
+
+No se ajusta bien a los datos por lo que el $R^2$ es pequeño. 
+
+## Modelo
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \beta_2 x_i^2 + \beta_3 x_i^3 + \cdots + \beta_k x_i^k + u_i
+$$
+
+- el modelo se estima con mínimos cuadrados, utilizando como regresores: $x_i, x_i^2, x_i^3, \cdots, x_i^k$.
+- todas las cuestiones de inferencia estudiadas en el tema de regresión lineal son válidas aquí también.
+
+Hay varias maneras de implementarlos en R:
+
+- Con la función $I()$:
+
+```{r}
+m1 = lm(wage ~ age + I(age^2) + I(age^3) + I(age^4), data = d)
+summary(m1)
+```
+
+- Definiendo un cambio de variables:
+
+```{r}
+z1 = d$age
+z2 = d$age^2
+z3 = d$age^3
+z4 = d$age^4
+m2 = lm(wage ~ z1 + z2 + z3 + z4, data = d)
+summary(m2)
+```
+
+- Con la función *poly()*:
+
+```{r}
+m3 = lm(wage ~ poly(age, degree = 4, raw = T), data = d)
+summary(m3)
+```
+
+La opción raw = T es necesaria, porque de lo contrario utiliza polinomios ortogonales. Vamos a dibujar la curva y los intervalos de confianza y predicción:
+
+```{r}
+age_grid = seq(from = min(d$age), to = max(d$age), by = 1)
+yp = predict(m1, newdata = data.frame(age = age_grid), se = TRUE)
+yp = predict(m1, newdata = data.frame(age = age_grid), interval = "confidence", level = 0.95)
+yp1 = predict(m1, newdata = data.frame(age = age_grid), interval = "prediction", level = 0.95)
+```
+
+```{r}
+plot(wage ~ age, data = d, xlim = range(age), cex = 0.5, col = "darkgrey")
+title("Polinomio de grado 4")
+lines(age_grid, yp[,1], lwd = 2, col = "blue")
+# intervalos de confianza para el nivel medio
+lines(age_grid, yp[,2], col = "blue", lty = 3)
+lines(age_grid, yp[,3], col = "blue", lty = 3)
+# intervalos de prediccion
+lines(age_grid, yp1[,2], col = "red", lty = 3)
+lines(age_grid, yp1[,3], col = "red", lty = 3)
+```
+
+## Selección del grado máximo del polinomio
+
+Vamos a ir aumentando el grado del polinomio:
+
+```{r}
+# numero maximo de escalones
+max_grad = 10
+
+r2_adj = rep(0, max_grad)
+for (i in 1:max_grad){
+  mi = lm(wage ~ poly(age, degree = i, raw = T), data = d)
+  mi_summary = summary(mi)
+  r2_adj[i] = mi_summary$adj.r.squared
+}
+plot(r2_adj, type = "b")
+```
+
+Como vemos, no aumentamos el R2 para ordenes mayores de 4. Podemos afinar más utilizando el contraste de la F:
+
+$$
+F_0 = \frac{(VNE(m)-VNE(k))/(k-m)}{VNE(k)/(n-k-1)} \sim F_{k-m, n-k-1}
+$$
+
+Vamos a comparar los modelos de grado 3, 4 y 5:
+
+```{r}
+mk3 = lm(wage ~ poly(age, degree = 3, raw = T), data = d)
+mk4 = lm(wage ~ poly(age, degree = 4, raw = T), data = d)
+mk5 = lm(wage ~ poly(age, degree = 5, raw = T), data = d)
+```
+
+```{r}
+anova(mk3,mk4)
+```
+
+
+```{r}
+anova(mk4,mk5)
+```
+
+```{r}
+anova(mk3,mk5)
+```
+
+Como vemos, orden 3 y orden 5 son equivalentes, luego nos quedamos con el de orden 3 porque siempre preferimos modelos sencillos a modelos complejos.
+
+# Polinomios ortogonales
+
+## Definición del modelo
+
+Uno de los principales problemas que tiene utilizar el modelo anterior es que para polinomios de grado elevado, la matriz $X^T X$ es casi singular, y podemos tener problemas en la estimación del modelo. Por ejemplo:
+
+```{r}
+mk6 = lm(wage ~ poly(age, degree = 6, raw = T), data = d)
+summary(mk6)
+```
+
+Como vemos, en este modelo salen todos los parámetros no significativos, incluso $\beta_1$ y $\beta_2$.
+
+Una opción es utilizar el modelo:
+
+$$
+y_i = \beta_0 + \beta_1 P_1(x_i) + \beta_2 P_2(x_i) + \cdots + \beta_k P_k(x_i) + u_i
+$$
+
+donde $P_k(x_i)$ es el polinomio de orden k que verifica:
+
+$$
+\sum _{i=1}^n  P_r(x_i)  P_s(x_i) = 0, \ r \neq s, \ r,s = 1,2,\ldots,k
+$$
+
+es decir, son polinomios ortogonales. El modelo sigue siendo $y = X\beta + u$, con
+
+$$
+X = 
+\begin{bmatrix}
+1 & P_1(x_1) & \cdots & P_k(x_1) \\
+1 & P_1(x_2) & \cdots & P_k(x_2) \\
+\vdots & \vdots & & \vdots \\
+1 & P_1(x_n) & \cdots & P_k(x_n) \\
+\end{bmatrix}
+$$
+
+Por tanto:
+
+$$
+X^T X =
+\begin{bmatrix}
+n & 0 & \cdots & 0 \\
+0 & \sum_{i=1}^n P_1^2(x_i) & \cdots & 0 \\
+\vdots & \vdots & & \vdots \\
+0 & 0 & \cdots & \sum_{i=1}^n P_k^2(x_i) \\
+\end{bmatrix}
+, \quad
+X^T y =
+\begin{bmatrix}
+\sum_{i=1}^n y_i \\
+\sum_{i=1}^n P_1(x_i) y_i \\
+\vdots \\
+\sum_{i=1}^n P_k(x_i) y_i  \\
+\end{bmatrix}
+$$
+
+Esta matriz es invertible (al ser diagonal) y:
+
+$$
+\hat \beta_j = \frac{\sum_{i=1}^n P_j(x_i) y_i}{\sum_{i=1}^n P_j^2(x_i)}
+$$
+
+Una consecuencia importante es que como $Var[\hat \beta] = \sigma^2 (X^T X)^{-1}$, se tiene que:
+
+$$
+Var[\hat \beta_j] = \frac{\sigma^2}{\sum_{i=1}^n P_j^2(x_i)}
+$$
+
+## Propiedades
+
+- Los parámetros del modelo ortogonal no coincide con los del modelo polinómico no ortogonal:
+
+```{r}
+mk4a = lm(wage ~ poly(age, degree = 6), data = d)
+summary(mk4a)
+summary(mk4)
+```
+
+- pero coincide la varianza residual, el R2,... Se ha hecho un cambio de base, pero el modelo final es el mismo.
+
+- La predicción tiene que ser la misma:
+
+```{r}
+predict(mk4, newdata = data.frame(age = 22), interval = "confidence")
+predict(mk4a, newdata = data.frame(age = 22), interval = "confidence")
+```
+
+- Los regresores se van añadiendo sin modificar las estimaciones obtenidas para los parámetros ya obtenidos:
+
+```{r}
+summary(lm(wage ~ poly(age, degree = 3), data = d))
+summary(lm(wage ~ poly(age, degree = 4), data = d))
+```
