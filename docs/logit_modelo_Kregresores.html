@@ -245,7 +245,7 @@ div.tocify {
 
 
 <div id="modelo" class="section level1" number="1">
-<h1 number="1"><span class="header-section-number">1</span> Modelo</h1>
+<h1><span class="header-section-number">1</span> Modelo</h1>
 <p>El archivo <em>MichelinNY.csv</em> contiene linformación de 164 restaurantes franceses incluidos en la guía <em>Zagat Survey 2006: New York City Restaurants</em>.</p>
 <pre class="r"><code>d = read.csv(&quot;datos/MichelinNY.csv&quot;)
 str(d)</code></pre>
@@ -297,14 +297,14 @@ f(x_{1i}, x_{2i}, \cdots, x_{ki}) = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)
 \]</span></p>
 </div>
 <div id="estimación-de-los-parámetros-del-modelo-máxima-verosimilitud" class="section level1" number="2">
-<h1 number="2"><span class="header-section-number">2</span> Estimación de los parámetros del modelo: máxima verosimilitud</h1>
+<h1><span class="header-section-number">2</span> Estimación de los parámetros del modelo: máxima verosimilitud</h1>
 <p>Para estimar los parámetros del modelo (<span class="math inline">\(\beta_0\)</span> y <span class="math inline">\(\beta_1\)</span>) se utiliza el método de máxima verosimilitud, que consiste en:</p>
 <ul>
 <li>Definir la función logaritmo de la verosimilitud;</li>
 <li>La estimación de los parámetros son aquellos que maximizan la funcion log-verosimilitud.</li>
 </ul>
 <div id="la-función-de-verosimilitud" class="section level2" number="2.1">
-<h2 number="2.1"><span class="header-section-number">2.1</span> La función de verosimilitud</h2>
+<h2><span class="header-section-number">2.1</span> La función de verosimilitud</h2>
 <p>La función de verosimilitud es la probabilidad de obtener la muestra dada. Por tanto, dada la muestra <span class="math inline">\(\{y_1,y_2, \cdots, y_n \}\)</span>, la probabilidad de obtener dicha muestra es:</p>
 <p><span class="math display">\[
 P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} 
@@ -348,7 +348,7 @@ logL(beta,d$InMichelin,X)</code></pre>
 <pre><code>## [1] -261.6999</code></pre>
 </div>
 <div id="el-máximo-de-la-función-de-verosimilitud" class="section level2" number="2.2">
-<h2 number="2.2"><span class="header-section-number">2.2</span> El máximo de la función de verosimilitud</h2>
+<h2><span class="header-section-number">2.2</span> El máximo de la función de verosimilitud</h2>
 <p>Derivando e igualando a cero:</p>
 <p><span class="math display">\[
 \frac{\partial logL(\beta)}{\partial \beta} 
@@ -465,7 +465,7 @@ hess_logL(beta, X)</code></pre>
 ## [5,] -279.934455 -5615.4312 -4887.459 -5108.8271 -11571.9056</code></pre>
 </div>
 <div id="algoritmo-de-newton-raphson" class="section level2" number="2.3">
-<h2 number="2.3"><span class="header-section-number">2.3</span> Algoritmo de Newton-Raphson</h2>
+<h2><span class="header-section-number">2.3</span> Algoritmo de Newton-Raphson</h2>
 <p>El algoritmo de Newton-Raphson para la función log-verosimilitud es:</p>
 <p><span class="math display">\[
 \beta_{k+1} = \beta_k - \alpha H^{-1}_k G_k
@@ -564,14 +564,14 @@ Newton_logL(beta_i,d$InMichelin,X)</code></pre>
 ## Price             0.09123707</code></pre>
 </div>
 <div id="algoritmo-bfgs" class="section level2" number="2.4">
-<h2 number="2.4"><span class="header-section-number">2.4</span> Algoritmo BFGS</h2>
+<h2><span class="header-section-number">2.4</span> Algoritmo BFGS</h2>
 <p>La función que vamos a minimizar es:</p>
 <pre class="r"><code>logLa = function(beta,y,X){
   logL = logL(beta,y,X)
   return(-logL)
 }</code></pre>
 <p>Utilizando el mismo punto de partida que para el algoritmo Newton:</p>
-<pre class="r"><code>mle1 = optim(par = beta_i, fn = logLa, y = d$InMichelin, X = X, gr = NULL, method = &quot;BFGS&quot;, hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))</code></pre>
+<pre class="r"><code>mle = optim(par = beta_i, fn = logLa, y = d$InMichelin, X = X, gr = NULL, method = &quot;BFGS&quot;, hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))</code></pre>
 <pre><code>## initial  value 108.793234 
 ## iter   2 value 108.179208
 ## iter   3 value 95.583943
@@ -595,12 +595,12 @@ Newton_logL(beta_i,d$InMichelin,X)</code></pre>
 ## iter  19 value 74.198474
 ## final  value 74.198474 
 ## converged</code></pre>
-<pre class="r"><code>mle1$par</code></pre>
+<pre class="r"><code>mle$par</code></pre>
 <pre><code>##  (Intercept)         Food        Decor      Service        Price 
 ## -11.19660070   0.40483799   0.09992470  -0.19249028   0.09175322</code></pre>
 </div>
 <div id="estimacion-con-r" class="section level2" number="2.5">
-<h2 number="2.5"><span class="header-section-number">2.5</span> Estimacion con R</h2>
+<h2><span class="header-section-number">2.5</span> Estimacion con R</h2>
 <pre class="r"><code>m2 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
 summary(m2)</code></pre>
 <pre><code>## 

@@ -52,13 +52,15 @@ output:
     b. [Matriz de covarianzas](apendice_covarianzas.html) [(pdf)](apendice_covarianzas.pdf)
     c. [Variable aleatoria normal](apendice_normal.html) [(pdf)](apendice_normal.pdf)
 
-## Regresión logística
+## Modelos lineales generalizados
+
+### Regresión logística
 
 1. Modelo de regresión logística
     a. [Modelo con un regresor](logit_modelo_1regresor.html) [(pdf)](logit_modelo_1regresor.pdf)
     b. [Modelo con K regresores](logit_modelo_Kregresores.html) [(pdf)](logit_modelo_Kregresores.pdf)
     c. [Regresión logística binomial](logit_modelo_binomial.html)[(pdf)](logit_modelo_binomial.pdf)
-    c. [Regresores cualitativos](lm_modelo_cualitativas.html) [(pdf)](lm_modelo_cualitativas.pdf)
+    c. [Regresores cualitativos](logit_modelo_cualitativas.html) [(pdf)](logit_modelo_cualitativas.pdf)
 2. Inferencia en el modelo de regresión logística
     b. [Estimadores y su distribución](lm_inferencia_muestreo.html) [(pdf)](lm_inferencia_muestreo.pdf)
     c. [Intervalos de confianza](lm_inferencia_intervalos.html) [(pdf)](lm_inferencia_intervalos.pdf)
@@ -69,6 +71,18 @@ output:
     b. [Análisis de las relaciones entre variables](lm_aplicaciones_explicacion.html) [(pdf)](lm_aplicaciones_explicacion.pdf)
 4. Diagnosis
     a. [Análisis de los residuos del modelo](lm_diagnosis.html) [(pdf)](lm_diagnosis.pdf)
+
+### Regresión de Poisson
+
+### Modelos lineales generalizados
+
+## Árboles de clasificación y de regresión
+
+### Árboles de regresión
+
+### Árboles de clasificación
+
+### Random forests
 
 # Bibliografía
 
