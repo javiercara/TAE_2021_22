@@ -1,0 +1,149 @@
+---
+title: 'Regresores cualitativos'
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+# Regresores cualitativos con dos niveles
+
+El archivo *Credit Approval Decisions.csv* contiene información acerca de la aceptación o rechazo de un crédito. Se dispone también de información acerca de otras variables adicionales. El objetivo es analizar la variable *Decision* en función del resto de variables.
+
+```{r}
+d = read.csv("datos/Credit Approval Decisions.csv")
+str(d)
+```
+
+Convertimos las variables cualitativas a factor:
+
+```{r}
+d$Homeowner = factor(d$Homeowner)
+d$Decision = factor(d$Decision)
+str(d)
+```
+
+## Variables auxiliares
+
+Se crean variables auxiliares con valores cero - uno. Por ejemplo
+
+- HomeownerY = 1 si Homeowner = "Y"
+- HomeownerY = 0 si Homeowner = "N"
+
+```{r}
+HomeownerY = ifelse(d$Homeowner == "Y", 1, 0)
+```
+
+Estimamos por tanto el modelo
+
+$$
+P(Decision_i = 1) = \frac{exp(\beta_0 + \beta_1 HomeownerY_i)}{1 + exp(\beta_0 + \beta_1 HomeownerY_i)}
+$$
+
+Al final estamos trabajando con dos modelos:
+
+- HomeownerY = 0:
+
+$$
+P(Decision_i = 1) = \frac{exp(\beta_0)}{1 + exp(\beta_0)}
+$$
+
+- HomeownerY = 1:
+
+$$
+P(Decision_i = 1) = \frac{exp(\beta_0+\beta_1)}{1 + exp(\beta_0+\beta_1)}
+$$
+
+Por tanto, si $\beta_1 = 0$, entonces P(Decision = 1 | Homeowner = Y) = P(Decision = 1 | Homeowner = N). Si $\beta_1 > 0$, entonces:
+
+$$
+\beta_0 < \beta_0 + \beta_1 \\
+-\beta_0 > -\beta_0 - \beta_1 \\
+exp(-\beta_0) > exp(-\beta_0 - \beta_1) \\
+1 + exp(-\beta_0) > 1 + exp(-\beta_0 - \beta_1) \\
+\frac{1}{1 + exp(-\beta_0)} < \frac{1}{1 + exp(-\beta_0 - \beta_1)} \\
+\frac{exp(\beta_0)}{1 + exp(\beta_0)} < \frac{exp(\beta_0 + \beta_1)}{1 + exp(\beta_0 + \beta_1)} \\
+P(Decision = 1 | Homeowner = N) < P(Decision = 1 | Homeowner = Y)
+$$
+
+Estimamos el modelo. Recordemos que la variable respuesta toma valores 0 y 1. Por tanto si definimos:
+
+```{r}
+Decision1 = ifelse(d$Decision == "Approve", 1, 0)
+```
+
+el modelo que estamos estimando es P(Y = 1) = P(Decision1 = 1) = P(Decision = "Approve").
+
+```{r}
+m1 = glm(Decision1 ~ HomeownerY, family = binomial)
+summary(m1)
+```
+
+Como $\beta_1 > 0$ quiere decir que P(Approve|Homeowner = N) < P(Approve|Homeowner = Y).
+
+## Variables auxiliares 1
+
+```{r}
+HomeownerN = ifelse(d$Homeowner == "N", 1, 0)
+```
+
+```{r}
+m2 = glm(Decision1 ~ HomeownerN, family = binomial)
+summary(m2)
+```
+
+## Factores
+
+Es importante utilizar bien los niveles de las variables:
+
+```{r}
+levels(d$Decision)
+```
+
+
+```{r}
+levels(d$Homeowner)
+```
+
+Por tanto, si estimamos el modelo:
+
+```{r}
+m3 = glm(Decision ~ Homeowner, data = d, family = binomial)
+summary(m3)
+```
+
+En el fondo estamos estimando P(Reject|Homeowner = "Y"), ya que
+
+- la variable respuesta tiene que tomar valores 1 y 0. R asigna el cero al nivel de referencia. Por lo tanto, P(Decision = 1) = P(Decision = Reject).
+- para el regresor de tipo factor, R crea una variable auxiliar que vale 1 y 0, y asigna el cero al nivel de referencia. Por tanto crea HomeownerY, donde HomownerY = 1 cuando Homeowner = "Yes".
+
+Si queremos estimar el modelo m1 anterior tenemos que hacer:
+
+```{r}
+d$Decision = relevel(d$Decision, ref = "Approve")
+m4 = glm(Decision ~ Homeowner, data = d, family = binomial)
+summary(m4)
+```
+
+# Variables cualitativas y cuantitativas
+
+El funcionamiento es idéntico que el modelo de regresión lineal:
+
+```{r}
+d$Decision = relevel(d$Decision, ref = "Approve")
+m4 = glm(Decision ~ Homeowner + Credit_Score + Years_Credit_History, data = d, family = binomial)
+summary(m4)
+```
+
+# Variables cualitativas con más de dos niveles
+
+Igual que en regresión lineal, se tienen que crear tantas variables auxiliares como niveles del factor menos una.
+
+
+
+
+

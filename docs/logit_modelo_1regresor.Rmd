@@ -1,0 +1,468 @@
+---
+title: 'Modelo de regresión logística con 1 regresor'
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+# Introduccion
+
+El archivo *MichelinNY.csv* contiene linformación de 164 restaurantes franceses incluidos en la guía *Zagat Survey 2006: New York City Restaurants*.
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+str(d)
+```
+
+- Restaurant.Name: nombre del restaurante.
+- Food: puntuación media de la comida otorgada por los clientes (sobre 30).
+- Decor: puntuación media de la decoración otorgada por los clientes (sobre 30).
+- Service: puntuación media del servicio otorgada por los clientes (sobre 30).
+- Price: precio medio de la cena en dólares.
+- InMichelin: vale 1 si el restaurante está en la Guía Michel y 0 si no está en dicha guía.
+
+En este caso queremos analizar qué variables influyen en que un restaurante sea incluido en la Guía Michelín. Podríamos pensar en un modelo de regresión lineal:
+
+$$
+InMichelin_i = \beta_0 + \beta_1 Food_i + u_i, \quad u_i \sim N(0,\sigma^2)
+$$
+
+```{r}
+m = lm(InMichelin ~ Food, data = d)
+plot(d$Food, d$InMichelin)
+abline(m, col = "red")
+```
+
+Pero este modelo no es válido porque, entre otras razones, los residuos no tienen distribución normal ya que la respuesta es binaria, 0 y 1:
+
+```{r}
+plot(fitted.values(m), residuals(m))
+```
+
+# Modelo
+
+En este tema se va a utilizar el **modelo logit** para trabajar con variables respuesta binarias. La idea es seguir utilizando un modelo que relacione la variable respuesta y los regresores:
+
+$$
+y_i = f(x_{i}) + u_i
+$$
+
+donde en este caso $y_i = \{0,1\}$. En regresión lineal, como $u_i \sim N(0,\sigma^2)$, se tenía que:
+
+$$
+f(x_{i}) = E[y_i] = \beta_0 + \beta_1 x_{i}
+$$
+
+Para conseguir dicho modelo, en el modelo logit se trabaja con probabilidades. Para ello se definen las siguientes probabilidades:
+
+- $P(y_i = 1) = \pi_i$
+- $P(y_i = 0) = 1 - \pi_i$.
+
+donde:
+
+$$
+\pi_i = \frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}
+$$
+
+Como $\pi_i$ es una probabilidad debe tomar valores entre 0 y 1. Existen varias funciones que cumplen esa condición, entre ellas la función anterior, que se conoce como función logística.
+
+```{r}
+# ejemplo de función logística
+x = seq(0,14,0.5)
+logis1 = 1/(1+exp(-6 + 1*x))
+plot(x,logis1, type = "b")
+```
+
+```{r}
+# ejemplo de función logística
+logis2 = 1/(1+exp(6 - 1*x))
+plot(x,logis2, type = "b")
+```
+
+La idea era tener un modelo del tipo:
+
+$$
+y_i = f(x_{i}) + u_i
+$$
+
+donde se va a mantener que $E[u_i] = 0$ (aunque ya no se va a cumplir que $u_i \sim$ Normal). Por tanto, en el modelo de regresión logística también se va a cumplir que:
+
+$$
+E[y_i] = f(x_{i})
+$$
+
+Como $y_i$ toma valores 1 y 0 con probabilidades $\pi_i$ y $1-\pi_i$ se tiene que:
+
+$$
+E[y_i] = 1*\pi_i + 0*(1-\pi_i) = \pi_i
+$$
+
+Es decir, en el modelo de regresión logística:
+
+$$
+f(x_{i}) = \frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}
+$$
+
+
+# Estimación de los parámetros del modelo: máxima verosimilitud
+
+Para estimar los parámetros del modelo ($\beta_0$ y $\beta_1$) se utiliza el método de máxima verosimilitud, que consiste en:
+
+- Definir la función logaritmo de la verosimilitud;
+- La estimación de los parámetros son aquellos que maximizan la funcion log-verosimilitud.
+
+## La función de verosimilitud
+
+La función de verosimilitud es la probabilidad de obtener la muestra dada. Para un sola observación:
+
+$$
+P(Y_i = y_i) = \pi_i^{y_i} (1 - \pi_i)^{1-y_i}, i = 1,2,\ldots,n
+$$
+
+Efectivamente
+
+$$
+P(Y_i = 1) = \pi_i, \quad P(Y_i = 0) = 1-\pi_i
+$$
+
+Por tanto, dada la muestra $\{Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n \}$, la probabilidad de obtener dicha muestra es:
+
+$$
+P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} 
+$$
+
+Se denomina función de verosimilitud a la probabilidad de obtener la muestra:
+
+$$
+L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i}
+$$
+
+donde $\beta = [\beta_0 \quad \beta_1]^T$. Efectivamente, la función de verosimilitud es función de $\beta$ ya que $\pi_i$ depende de $\beta$.
+
+Se suele trabajar con logaritmos ya que: 1) transforma los productos en sumas y es más fácil trabajar con sumas; 2) el máximo de $log L(\beta)$ y de $L(\beta)$ se alcanzan en el mismo punto ya que el logaritmo es una función monótona creciente (recordad que el método de máxima verosimilitud consiste en encontrar el máximo de la verosimilitud).
+
+$$
+log L(\beta) = log \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} = \sum_{i=1}^{n}(y_i log(\pi_i) +  (1-y_i) log(1 - \pi_i))
+$$
+
+$$
+= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}\right) +  (1-y_i) log\left(1 - \frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}\right) \right)
+$$
+
+$$
+= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(\frac{1}{1 + exp(x_i^T \beta)}\right) \right)
+$$
+
+$$
+= \sum_{i=1}^{n}( y_i log(exp(\beta_0 + \beta_1 x_{i}) - y_i log (1 + exp(\beta_0 + \beta_1 x_{i})) -  (1-y_i) log(1 + exp(\beta_0 + \beta_1 x_{i})) )
+$$
+$$
+= \sum_{i=1}^{n}( y_i (\beta_0 + \beta_1 x_{i}) - log (1 + exp(\beta_0 + \beta_1 x_{i})) )
+$$
+
+En R, la función de verosimilitud la podemos calcular así:
+
+```{r}
+logL = function(beta,y,x){
+  # beta = [beta0 beta1]
+  n = length(y)
+  suma = 0
+  for (i in 1:n){
+    suma = suma + y[i]*(beta[1] + beta[2]*x[i]) - 
+      log(1 + exp(beta[1] + beta[2]*x[i]))
+  }
+  return(suma)
+}
+```
+
+Por ejemplo, para $\beta_0 = -12$ y $\beta_1 = 1$, la función de verosimilitud vale:
+
+```{r}
+beta = c(-12,1)
+logL(beta,d$InMichelin,d$Food)
+```
+
+## El máximo de la función de verosimilitud
+
+Tenemos que derivar e igualar a cero:
+
+$$
+\frac{\partial logL(\beta)}{\partial \beta_0} = \sum_{i=1}^{n} \left( y_i  - \frac{exp(\beta_0 + \beta_1 x_{i})}{1+exp(\beta_0 + \beta_1 x_{i})} \right) = \sum_{i=1}^{n} (y_i  - \pi_i)
+$$
+
+$$
+\frac{\partial logL(\beta)}{\partial \beta_1} = \sum_{i=1}^{n} \left( y_i x_i  - \frac{x_i exp(\beta_0 + \beta_1 x_{i})}{1+exp(\beta_0 + \beta_1 x_{i})} \right) = \sum_{i=1}^{n} x_i(y_i  - \pi_i)
+$$
+
+En forma matricial tenemos el vector gradiente:
+
+$$
+\frac{\partial logL(\beta)}{\partial \beta} 
+=
+\begin{bmatrix}
+\frac{\partial logL(\beta)}{\partial \beta_0} \\ 
+\frac{\partial logL(\beta)}{\partial \beta_1}
+\end{bmatrix}
+= \sum_{i=1}^n
+\begin{bmatrix}
+1 \\
+x_{1i}
+\end{bmatrix}
+(y_i  - \pi_i)
+=
+X^T(y  - \pi)
+=
+\begin{bmatrix}
+0 \\
+0
+\end{bmatrix}
+$$
+
+donde $X$ es la matriz de regresores:
+
+$$
+X = 
+\begin{bmatrix}
+1 & x_1 \\
+1 & x_2 \\
+\cdots &\cdots \\
+1 & x_n \\
+\end{bmatrix}
+, \quad
+y = 
+\begin{bmatrix}
+y_1 \\ y_2 \\ \cdots \\ y_n
+\end{bmatrix}
+, \quad
+\pi = 
+\begin{bmatrix}
+\pi_1 \\ \pi_2 \\ \cdots \\ \pi_n
+\end{bmatrix}
+$$
+
+Sin embargo no es posible despejar $\beta_0$ y $\beta_1$ de las ecuaciones anteriores. El máximo de la función log-verosimilitud se tiene que hacer numéricamente.
+
+En los siguientes apartados se va a necesitar la matriz de derivadas segundas o matriz hessiana. Su valor es:
+
+$$
+\frac{\partial^2 logL(\beta)}{\partial \beta_0^2} = \sum_{i=1}^{n} \left( - \frac{exp(w)(1+exp(w)) - exp(w)^2}{(1+exp(w))^2} \right) = \sum_{i=1}^{n} \left( - \frac{exp(w)}{(1+exp(w))} + \frac{exp(w)^2}{(1+exp(w))^2} \right) = - \sum_{i=1}^{n} \pi_i(1  - \pi_i)
+$$
+
+$$
+\frac{\partial^2 logL(\beta)}{\partial \beta_0 \partial \beta_1} = \sum_{i=1}^{n} \left( - \frac{x_i exp(w)(1+exp(w)) - x_iexp(w)^2}{(1+exp(w))^2} \right)  = -\sum_{i=1}^{n} \pi_i(1  - \pi_i)x_i
+$$
+
+$$
+\frac{\partial^2 logL(\beta)}{\partial \beta_1^2} = \sum_{i=1}^{n} x_i \left( - \frac{x_i exp(w)(1+exp(w)) - x_iexp(w)^2}{(1+exp(w))^2} \right)   = -\sum_{i=1}^{n} \pi_i(1  - \pi_i)x_i^2
+$$
+
+donde se ha utilizado que $w = \beta_0 + \beta_1 x_{i}$. En forma matricial
+
+$$
+\frac{\partial log L(\beta)}{\partial \beta \partial \beta^T}
+=
+\begin{bmatrix}
+\frac{\partial^2 logL(\beta)}{\partial \beta_0^2} &  \frac{\partial^2 logL(\beta)}{\partial \beta_0 \partial \beta_1} \\ 
+\frac{\partial^2 logL(\beta)}{\partial \beta_0 \partial \beta_1} & \frac{\partial^2 logL(\beta)}{\partial \beta_1^2}
+\end{bmatrix}
+= - \sum_{i=1}^n
+\begin{bmatrix}
+1 \\
+x_{i}
+\end{bmatrix}
+\pi_i(1  - \pi_i)
+\begin{bmatrix}
+1 & x_{i}
+\end{bmatrix}
+=
+- X^T W X
+$$
+
+donde $W$ es una matriz diagonal con
+
+$$
+W_{ii} = \pi_i(1-\pi_i)
+$$
+
+En R:
+
+```{r}
+grad_logL = function(beta,y,x){
+  n = length(y)
+  X = cbind(rep(1,n),x)
+  y = matrix(y, nrow = n, ncol = 1)
+  pi = matrix(0, nrow = n, ncol = 1)
+  for (i in 1:n){
+    pi[i,1] = exp(beta[1] + beta[2]*x[i])/(1 + exp(beta[1] + beta[2]*x[i]))
+  }
+  grad = t(X) %*% (y - pi)
+  return(grad)
+}
+```
+
+Comprobacion:
+
+```{r}
+beta = c(-12,1)
+grad_logL(beta, d$InMichelin, d$Food)
+
+```
+
+```{r}
+hess_logL = function(beta,x){
+  n = length(x)
+  X = cbind(rep(1,n),x)
+  W = matrix(0, nrow = n, ncol = n)
+  for (i in 1:n){
+    pi = exp(beta[1] + beta[2]*x[i])/(1 + exp(beta[1] + beta[2]*x[i]))
+    W[i,i] = pi*(1-pi)
+  }
+  hess = -t(X) %*% W %*% X
+  return(hess)
+}
+```
+
+```{r}
+beta = c(-12,1)
+hess_logL(beta, d$Food)
+```
+
+```{r}
+# fdHess calcula el gradiente y el hessiano numéricamente, 
+# mediante diferencias finitas (para comprobar)
+nlme::fdHess(beta,logL, y = d$InMichelin, x = d$Food)
+```
+
+## Algoritmo de Newton-Raphson
+
+Queremos encontrar el mínimo de la función f(x). Para ello aproximamos la función por un polinomio de segundo grado (polinomio de Taylor de segundo grado):
+
+$$
+f(x) = p_2(x) + e(x)
+$$
+
+donde
+
+$$
+p_2(x) = f(x_k) + f'(x_k)(x-x_k) + \frac{1}{2}f''(x_k)(x-x_k)^2
+$$
+
+Derivamos
+
+$$
+\frac{\partial p_2(x)}{\partial x} = f'(x_k) + f''(x_k)(x-x_k) = 0
+$$
+
+El mínimo de $p_2(x)$ se encuentra en 
+
+$$
+x_{max} = x_k - \frac{f'(x_k)}{f''(x_k)}
+$$
+
+por eso utilizamos un polinomio de segundo grado, porque el punto donde se alcanza el máximo (mínimo) tiene una expresión analitica. 
+
+En el punto obtenido se vuelve a aplicar es mismo procedimiento obteniendo un nuevo valor para el máximo. Este esquema se repite, obteniendo el algoritmo de Newton:
+
+$$
+x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}
+$$
+
+Si la función es multivariante, el polinomio de Taylor de segundo orden es:
+
+$$
+p_2(x) = f(x_k) + (x - x_k)^T G_f(x_k) + (x - x_k)^T H_f(x_k)(x - x_k)
+$$
+
+donde $x = [x_1 \ x_2 \ \cdots \ x_n]$, $G_f(x_k)$ es el vector gradiente de *f* calculado en $x_k$, y $H_f(x_k)$ es la matriz hessiana de *f* calculada en $x_k$. Por tanto, el algoritmo de Newton en caso de funciones multivariantes es:
+
+$$
+x_{k+1} = x_k - H^{-1}_k G_k
+$$
+
+donde $G_k = G_f(x_k)$, y $H_k = H_f(x_k)$. 
+
+El algoritmo de Newton funciona muy bien en las proximidades del máximo. Sin embargo, lejos del máximo la convergencia es muy lenta y puede incluso que el algoritmo no converja. Por eso es habitual introducir un coeficiente $\alpha$ en el algoritmo:
+
+$$
+x_{k+1} = x_k - \alpha H^{-1}_k G_k
+$$
+
+El valor de $\alpha$ se tiene que calcular en cada caso particular, para lo que se utilizan [algoritmos de búsqueda lineal](https://en.wikipedia.org/wiki/Line_search). Por supuesto, esto queda fuera del alcance y de los objeticos de la asignatura. Nosotros vamos a utilizar $\alpha = 0.1$, que da resultados aceptables para las datos analizados.
+
+Por último, como las variables de la función log-verosimilitud son $\beta = [\beta_0 \ \beta_1]^T$, el algoritmo de Newton se escribe en nuestro caso como:
+
+$$
+\beta_{k+1} = \beta_k - \alpha H^{-1}_k G_k
+$$
+
+El algoritmo de Newton para la función log-verosimilitud se puede implementar en R de manera sencilla:
+
+```{r}
+Newton_logL = function(beta_i, y, x, max_iter = 100, tol = 10^(-6), alfa = 0.1){
+  
+  # punto de partida
+  beta = beta_i
+  
+  iter = 1
+  tol1 = Inf
+  while ((iter <= max_iter) & (tol1 > tol)){
+    fun = logL(beta,y,x)
+    grad = grad_logL(beta,y,x)
+    hess = hess_logL(beta,x)
+    beta = beta - alfa*solve(hess) %*% grad
+    fun1 = logL(beta,y,x)
+    tol1 = abs((fun1-fun)/fun)
+    print(paste("Iteracion ",iter," log-verosimilitud ",fun1))
+    iter = iter + 1
+  }
+  return(beta)
+}
+```
+
+Como punto de partida podemos utilizar por ejemplo la solución de mínimos cuadrados:
+
+```{r}
+m = lm(InMichelin ~ Food, data = d)
+beta_i = coef(m)
+Newton_logL(beta_i,d$InMichelin,d$Food)
+```
+
+## Algoritmo BFGS
+
+El algoritmo de Newton tiene el inconveniente de que necesita calcular la inversa de la matriz hessiana. Esto a veces causa problemas numéricos si la matriz hessiana está mal condicionada. Otra alternativa es utilizar el algoritmo BFGS para maximizar la función log-versosimilitud. Este algoritmo, en lugar de calcular la inversa del hessiano, utiliza una aproximación a esta matriz que es numéricamente más estable. El algoritmo consiste en:
+
+$$
+x_{k+1} = x_k - B_kG_k
+$$
+
+donde $B_k$ es una aproximación de $H^{-1}_k$ [(ver más sobre esta matriz)](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm). Por eso a este algoritmo se le encuadra dentro de los algoritmos quasi-Newton.
+
+En R, el algoritmo BFGS está implementado en la función *optim()*. La función *optim(f)* minimiza la función *f*, pero nosotros queremos calcular el máximo (por eso hablamos de máxima verosimilitud). Para resolver este inconveniente tenemos en cuenta que *max(f) = min(-f)*. Por tanto, definimos una nueva función de verosimilitud que es la que vamos a minimizar
+
+```{r}
+logL_optim = function(beta,y,x){
+  logL = logL(beta,y,x)
+  return(-logL)
+}
+```
+
+Utilizando el mismo punto de partida que para el algoritmo Newton:
+
+```{r}
+mle = optim(par = beta_i, fn = logL_optim, y = d$InMichelin, x = d$Food, gr = NULL, method = "BFGS", hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))
+mle$par
+```
+
+## Estimacion con R
+
+```{r}
+m2 = glm(InMichelin ~ Food, data = d, family = binomial)
+summary(m2)
+```
+
+Básicamente, la función glm() utiliza el algoritmo de Newton.

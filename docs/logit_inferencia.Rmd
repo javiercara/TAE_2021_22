@@ -1,0 +1,135 @@
+---
+title: 'Estimadores y su distribución. Inferencia'
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+# Inferencia de parámetros individuales
+
+## Distribución asintótica de los estimadores
+
+Para muestras grandes, los estimadores de máxima verosimilitud tienen distribución asintótica normal. En concreto, se tiene que
+
+$$
+\hat \beta \sim N(\beta, I(\hat \beta))
+$$
+
+donde $I(\beta)$ se denomina Matriz de Información de Fisher observada:
+
+$$
+I(\beta) = -H_{logL}^{-1}(\beta)
+$$
+es decir, la inversa del hessiano de la función de verosimilitud (con signo negativo). En el caso de la propiedad anterior, la matriz $I(\beta)$ está evaluada en el valor que maximiza la verosimilitud. Por tanto, cada estimador de manera individual se distribuye como:
+
+$$
+\hat \beta_j \sim N(\beta_j, se(\hat \beta_j))
+$$
+
+donde 
+
+$$
+se(\hat \beta_j) = \sqrt{I_{jj}(\hat \beta)}
+$$
+
+es decir, los elementos de la diagonal de la matriz $I(\hat \beta)$.
+
+## Contrastes de hipótesis individuales
+
+Para resolver contrastes del tipo:
+
+$$
+H_0 : \beta_j = 0 \\
+H_1 : \beta_j \neq 0
+$$
+
+se utiliza la distribución asintóntica mostrada anteriormente. Por tanto, si la hipótesis nula es cierta se tiene:
+
+$$
+\frac{\hat \beta_j}{se(\hat \beta_j)} \sim N(0,1)
+$$
+
+A este método se lo conoce como método de Wald, o estadístico de [Wald](https://en.wikipedia.org/wiki/Abraham_Wald).
+
+Con R:
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+str(d)
+#d$InMichelin = factor(d$InMichelin)
+```
+
+Estimamos los parámetros del modelo:
+
+```{r}
+# cargamos las funciones que vamos a utilizar
+source("logit_funciones.R")
+
+# punto de partida
+m = lm(InMichelin ~ Food + Decor + Service + Price, data = d)
+beta_i = coef(m)
+
+# matriz X
+X = cbind(rep(1,nrow(d)), d[,3:6])
+
+# estimacion con el algoritmo optim
+mle = optim(par = beta_i, fn = logL_optim, gr = NULL,
+  y = d$InMichelin, X = X, 
+  method = "BFGS", hessian = F, 
+  control = list(trace = 1, REPORT = 1, maxit = 200))
+(beta_e = mle$par)
+```
+
+```{r}
+# matriz de información de Fisher
+I = -solve(hess_logL(beta_e,X))
+# standard error de los parámetros estimados
+(beta_se = sqrt(diag(I)))
+```
+
+```{r}
+# valor del estadístico del contraste
+(z = beta_e/beta_se)
+```
+
+```{r}
+# pvalores
+2*(1 - pnorm(abs(z)))
+```
+
+Esta información se aporta cuando utilizamos la funcion glm():
+
+```{r}
+m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m1)
+```
+
+## Intervalos de confianza
+
+Partimos de nuevo del estadístico de Wald:
+
+$$
+\frac{\hat \beta_j - \beta_j}{se(\hat \beta_j)} \sim N(0,1)
+$$
+
+Por tanto, el intervalo será:
+
+$$
+\hat \beta_j - z_{\alpha/2}se(\hat \beta_j) \leq \beta_j \leq \hat \beta_j + z_{\alpha/2}se(\hat \beta_j)
+$$
+
+```{r}
+alfa = 0.05
+data.frame(LI = beta_e - qnorm(1-alfa/2)*beta_se,
+LS = beta_e + qnorm(1-alfa/2)*beta_se)
+```
+
+```{r}
+confint(m1, level = 1-alfa)
+```
+

@@ -1,0 +1,321 @@
+---
+title: 'Modelo de regresión logística con k regresores'
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+---
+
+# Modelo
+
+El archivo *MichelinNY.csv* contiene linformación de 164 restaurantes franceses incluidos en la guía *Zagat Survey 2006: New York City Restaurants*.
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+str(d)
+```
+
+
+El objetivo es utilizar un modelo que relacione una serie de regresores con una variable respuesta binaria:
+
+$$
+y_i = f(x_{1i}, x_{2i}, \cdots, x_{ki}) + u_i
+$$
+
+donde en este caso $y_i = \{0,1\}$. Para ello se definen las siguientes probabilidades:
+
+- $P(y_i = 1) = \pi_i$
+- $P(y_i = 0) = 1 - \pi_i$.
+
+donde:
+
+$$
+\pi_i = \frac{exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki})}{1 + exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki})}
+$$
+
+Se puede escribir que
+
+$$
+\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki} =
+\begin{bmatrix}
+1 & x_{1i} & x_{2i} & \cdots & x_{ki}
+\end{bmatrix}
+\begin{bmatrix}
+\beta_0 \\ \beta_1 \\ \beta_2 \\ \cdots \\ \beta_k
+\end{bmatrix}
+= x_i^T \beta
+$$
+
+Es decir
+
+$$
+\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+$$
+
+
+Como se admite que $E[u_i] = 0$:
+
+$$
+E[y_i] = f(x_{1i}, x_{2i}, \cdots, x_{ki})
+$$
+
+Como $y_i$ toma valores 1 y 0 con probabilidades $\pi_i$ y $1-\pi_i$ se tiene que:
+
+$$
+E[y_i] = 1*\pi_i + 0*(1-\pi_i) = \pi_i
+$$
+
+$$
+f(x_{1i}, x_{2i}, \cdots, x_{ki}) = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+$$
+
+# Estimación de los parámetros del modelo: máxima verosimilitud
+
+Para estimar los parámetros del modelo ($\beta_0$ y $\beta_1$) se utiliza el método de máxima verosimilitud, que consiste en:
+
+- Definir la función logaritmo de la verosimilitud;
+- La estimación de los parámetros son aquellos que maximizan la funcion log-verosimilitud.
+
+## La función de verosimilitud
+
+La función de verosimilitud es la probabilidad de obtener la muestra dada. Por tanto, dada la muestra $\{y_1,y_2, \cdots, y_n \}$, la probabilidad de obtener dicha muestra es:
+
+$$
+P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} 
+$$
+
+Se denomina función de verosimilitud a la probabilidad de obtener la muestra:
+
+$$
+L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i}
+$$
+
+El logaritmo de la función de verosimilitud es:
+
+$$
+log L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} = \sum_{i=1}^{n}(y_i log\pi_i +  (1-y_i) log(1 - \pi_i))
+$$
+
+$$
+= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(1 - \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) \right)
+$$
+
+$$
+= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(\frac{1}{1 + exp(x_i^T \beta)}\right) \right)
+$$
+
+$$
+= \sum_{i=1}^{n}( y_i log(exp(x_i^T \beta) - y_i log (1 + exp(x_i^T \beta)) -  (1-y_i) log(1 + exp(x_i^T \beta)) )
+$$
+$$
+= \sum_{i=1}^{n}( y_i (x_i^T \beta) - log (1 + exp(x_i^T \beta)) )
+$$
+
+En R, la función de verosimilitud la podemos calcular así:
+
+```{r}
+logL = function(beta,y,X){
+  # asumimos que beta es un vector 
+  # beta = [beta0 beta1 .. betak]
+  
+  n = length(y)
+  suma = 0
+  for (i in 1:n){
+    suma = suma + y[i]*sum(X[i,]*beta) - 
+      log(1 + exp( sum(t(X[i,])*beta) ))
+  }
+  return(suma)
+}
+```
+
+Por ejemplo, para $\beta_0 = -2$ y $\beta_1 = \beta_2 = \beta_3 = \beta_4 = 0.5$, la función de verosimilitud vale:
+
+```{r}
+beta = c(-2,0.05,0.05,0.05,0.05)
+X = cbind(rep(1,nrow(d)), d[,3:6])
+logL(beta,d$InMichelin,X)
+```
+
+## El máximo de la función de verosimilitud
+
+Derivando e igualando a cero:
+
+$$
+\frac{\partial logL(\beta)}{\partial \beta} 
+=
+\begin{bmatrix}
+\frac{\partial logL(\beta)}{\partial \beta_0} \\ 
+\frac{\partial logL(\beta)}{\partial \beta_1} \\
+\cdots \\
+\frac{\partial logL(\beta)}{\partial \beta_k} \\
+\end{bmatrix}
+= 
+X^T(y  - \pi)
+=
+\begin{bmatrix}
+0 \\
+0 \\
+\cdots \\
+0
+\end{bmatrix}
+$$
+
+donde $X$:
+
+$$
+X = 
+\begin{bmatrix}
+1 & x_{11} & \cdots & x_{k1} \\
+1 & x_{12} & \cdots & x_{k2} \\
+\cdots & \cdots & \cdots & \cdots \\
+1 & x_{1n} & \cdots & x_{kn} \\
+\end{bmatrix}
+, \quad
+y = 
+\begin{bmatrix}
+y_1 \\ y_2 \\ \cdots \\ y_n
+\end{bmatrix}
+, \quad
+\pi = 
+\begin{bmatrix}
+\pi_1 \\ \pi_2 \\ \cdots \\ \pi_n
+\end{bmatrix}
+$$
+
+Sin embargo no es posible despejar las incóginitas del vector $\beta$ de las ecuaciones anteriores. El máximo de la función log-verosimilitud se tiene que hacer numéricamente.
+
+En los siguientes apartados se va a necesitar la matriz de derivadas segundas o matriz hessiana. Su valor es:
+
+$$
+\frac{\partial log L(\beta)}{\partial \beta \partial \beta^T}
+=
+\begin{bmatrix}
+\frac{\partial^2 logL(\beta)}{\partial \beta_0^2} &  \frac{\partial^2 logL(\beta)}{\partial \beta_0 \partial \beta_1} & \cdots & \frac{\partial^2 logL(\beta)}{\partial \beta_0 \partial \beta_k} \\
+\frac{\partial^2 logL(\beta)}{\partial \beta_1 \partial \beta_0} & \frac{\partial^2 logL(\beta)}{\partial \beta_1^2} & \cdots & \frac{\partial^2 logL(\beta)}{\partial \beta_1 \partial \beta_k} \\
+\cdots & \cdots & \cdots & \cdots \\
+\frac{\partial^2 logL(\beta)}{\partial \beta_k \partial \beta_0} & \frac{\partial^2 logL(\beta)}{\partial \beta_k \partial \beta_1 } & \cdots & \frac{\partial^2 logL(\beta)}{\partial \beta_k^2}
+\end{bmatrix}
+=
+- X^T W X
+$$
+
+donde $W$ es una matriz diagonal con
+
+$$
+W_{ii} = \pi_i(1-\pi_i)
+$$
+
+En R:
+
+```{r}
+grad_logL = function(beta,y,X){
+  X = as.matrix(X)
+  n = length(y)
+  y = matrix(y, nrow = n, ncol = 1)
+  pi = matrix(0, nrow = n, ncol = 1)
+  for (i in 1:n){
+    pi[i,1] = exp(sum(X[i,]*beta))/(1 + exp(sum(X[i,]*beta)))
+  }
+  grad = t(X) %*% (y - pi)
+  return(grad)
+}
+```
+
+Comprobacion:
+
+```{r}
+beta = c(-2,0.05,0.05,0.05,0.05)
+X = cbind(rep(1,nrow(d)), d[,3:6])
+grad_logL(beta, d$InMichelin, X)
+```
+
+```{r}
+hess_logL = function(beta,X){
+  X = as.matrix(X)
+  n = nrow(X)
+  W = matrix(0, nrow = n, ncol = n)
+  for (i in 1:n){
+    pi = exp(sum(X[i,]*beta))/(1 + exp(sum(X[i,]*beta)))
+    W[i,i] = pi*(1-pi)
+  }
+  hess = - t(X) %*% W %*% X
+  return(hess)
+}
+```
+
+```{r}
+beta = c(-2,0.05,0.05,0.05,0.05)
+X = cbind(rep(1,nrow(d)), d[,3:6])
+hess_logL(beta, X)
+nlme::fdHess(beta,logL, y = d$InMichelin, X)
+```
+
+## Algoritmo de Newton-Raphson
+
+El algoritmo de Newton-Raphson para la función log-verosimilitud es:
+
+$$
+\beta_{k+1} = \beta_k - \alpha H^{-1}_k G_k
+$$
+
+donde $\beta = [\beta_0 \ \beta_1 \ \cdots \beta_k]^T$. Este algoritmo para la función log-verosimilitud se puede implementar en R de manera sencilla:
+
+```{r}
+Newton_logL = function(beta_i, y, X, max_iter = 100, tol = 10^(-6), alfa = 0.1){
+  
+  # punto de partida
+  beta = beta_i
+  
+  iter = 1
+  tol1 = Inf
+  while ((iter <= max_iter) & (tol1 > tol)){
+    f = logL(beta,y,X)
+    grad = grad_logL(beta,y,X)
+    hess = hess_logL(beta,X)
+    beta = beta - alfa*solve(hess) %*% grad
+    f1 = logL(beta,y,X)
+    tol1 = abs((f1-f)/f)
+    print(paste("Iteracion ",iter," log-verosimilitud ",f1))
+    iter = iter + 1
+  }
+  return(beta)
+}
+```
+
+Como punto de partida podemos utilizar por ejemplo la solución de mínimos cuadrados:
+
+```{r}
+m = lm(InMichelin ~ Food + Decor + Service + Price, data = d)
+beta_i = coef(m)
+X = cbind(rep(1,nrow(d)), d[,3:6])
+Newton_logL(beta_i,d$InMichelin,X)
+```
+
+## Algoritmo BFGS
+
+La función que vamos a minimizar es:
+
+```{r}
+logLa = function(beta,y,X){
+  logL = logL(beta,y,X)
+  return(-logL)
+}
+```
+
+Utilizando el mismo punto de partida que para el algoritmo Newton:
+
+```{r}
+mle = optim(par = beta_i, fn = logLa, y = d$InMichelin, X = X, gr = NULL, method = "BFGS", hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))
+mle$par
+```
+
+## Estimacion con R
+
+```{r}
+m2 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m2)
+```
