@@ -24,7 +24,7 @@ Los datos que analizamos con el modelo logit pueden estar codificados en dos man
 head(d)
 ```
 
-Como la variable analizada, InMichelin, está codificada como 0 - 1, el modelo se denomina regresión logística binaria. Es el modelo que se ha estimado en las secciones precedentes.
+Como la variable analizada, InMichelin, está codificada como 0 - 1, el modelo se denomina **regresión logística binaria**. Es el modelo que se ha estimado en las secciones precedentes.
 
 - Con datos agrupados. En lugar de ceros y unos podemos indicar el numero de restaurantes que pertenecen a la Guía Michelin y que tienen un valor de la variable Food determinado. Por ejemplo:
 
@@ -40,20 +40,13 @@ $$
 P(y_i = 8) = \binom{33}{8} \pi_i^8(1 - \pi_i)^{33-8}
 $$
 
-donde $\pi_i$ es la probabilidad de que un restaurante con puntuación 20 esté en la Guía, $\pi_i$ = 8/33. Calculando:
-
-```{r}
-pi_i = 8/33
-choose(33,8)*pi_i^8*(1-pi_i)^(33-8)
-```
-
-De manera general, si $Y_i$ : "número de restaurantes incluidos en la Guía para un $x_i$ dado"
+donde $\pi_i$ es la probabilidad de que un restaurante con puntuación 20 esté en la Guía. De manera general, si $Y_i$ : "número de restaurantes incluidos en la Guía para un $x_i$ dado" se tiene que:
 
 $$
 P(Y_i = y_i) = \binom{m_i}{y_i} \pi_i^{y_i}(1-\pi_i)^{m_i-y_i}
 $$
 
-donde $m_i$ es el número total de restaurantes para un $x_i$ dado; $\pi_i = y_i/m_i$. De la variable $Y_i$ se dice que tiene distribución binomial (de ahí que se utilice la familia binomial en glm). Algunas propiedades de la distribución binomial son:
+donde $m_i$ es el número total de restaurantes para $x_i$. De la variable $Y_i$ se dice que tiene distribución binomial (de ahí que se utilice la familia binomial en glm). Algunas propiedades de la distribución binomial son:
 
 - Los valores que puede tomar la variable son $Y_i = 0, 1, \cdots, m_i$.
 - La esperanza es: $E[Y_i] = m_i \cdot p_i$.
@@ -62,19 +55,22 @@ donde $m_i$ es el número total de restaurantes para un $x_i$ dado; $\pi_i = y_i
 
 # Modelo
 
-El modelo sería:
+Los datos disponibles son
 
 $$
-y_i = f(x_i) + u_i, \quad E[u_i] = 0
+\begin{matrix}
+y_1 & x_1 & m_1 \\
+y_2 & x_2 & m_2 \\
+\cdots & \cdots & \cdots \\
+y_n & x_n & m_n \\
+\end{matrix}
 $$
 
-donde 
 
-- $x_i$: puntuación de la comida.
-- $Y_i$: número de restaurantes en la Guía para un $x_i$ dado.
+Al igual que el modelo binario se trabaja con probabilidades:
 
 $$
-f(x_i) = E[Y_i] = m_i \cdot \pi_i
+P(Y_i = y_i) = \binom{m_i}{y_i} \pi_i^{y_i}(1-\pi_i)^{m_i-y_i}, \quad y_i = 0,1, \cdots, m_i
 $$
 
 donde se adopta que:
@@ -83,6 +79,31 @@ $$
 \pi_i = \frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}
 $$
 
+Ambas ecuaciones forman el modelo que vamos a utilizar para analizar los datos incluidos en la variable d1.
+
+Otra forma de ver el modelo es:
+
+$$
+Y_i = f(x_i) + u_i, \quad E[u_i] = 0, 
+$$
+
+Por tanto:
+
+$$
+E[Y_i] = f(x_i)
+$$
+
+Com $Y_i$ tiene distribución binomial, su esperanza es
+
+$$
+E[Y_i] = m_i \cdot \pi_i
+$$
+
+lo que implica que
+
+$$
+Y_i = \frac{m_i \cdot exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})} + u_i, \quad E[u_i] = 0
+$$
 
 # Estimación de los parámetros
 
