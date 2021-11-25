@@ -245,9 +245,9 @@ div.tocify {
 
 
 <div id="inferencia-de-parámetros-individuales" class="section level1" number="1">
-<h1 number="1"><span class="header-section-number">1</span> Inferencia de parámetros individuales</h1>
+<h1><span class="header-section-number">1</span> Inferencia de parámetros individuales</h1>
 <div id="distribución-asintótica-de-los-estimadores" class="section level2" number="1.1">
-<h2 number="1.1"><span class="header-section-number">1.1</span> Distribución asintótica de los estimadores</h2>
+<h2><span class="header-section-number">1.1</span> Distribución asintótica de los estimadores</h2>
 <p>Para muestras grandes, los estimadores de máxima verosimilitud tienen distribución asintótica normal. En concreto, se tiene que</p>
 <p><span class="math display">\[
 \hat \beta \sim N(\beta, I(\hat \beta))
@@ -255,7 +255,11 @@ div.tocify {
 <p>donde <span class="math inline">\(I(\beta)\)</span> se denomina Matriz de Información de Fisher observada:</p>
 <p><span class="math display">\[
 I(\beta) = -H_{logL}^{-1}(\beta)
-\]</span> es decir, la inversa del hessiano de la función de verosimilitud (con signo negativo). En el caso de la propiedad anterior, la matriz <span class="math inline">\(I(\beta)\)</span> está evaluada en el valor que maximiza la verosimilitud. Por tanto, cada estimador de manera individual se distribuye como:</p>
+\]</span> es decir, la inversa del hessiano de la función de verosimilitud (con signo negativo):</p>
+<p><span class="math display">\[
+H_{logL}^{-1}(\beta) = - X^T W X
+\]</span></p>
+<p>En el caso de la propiedad anterior, la matriz <span class="math inline">\(I(\beta)\)</span> está evaluada en el valor que maximiza la verosimilitud. Por tanto, cada estimador de manera individual se distribuye como:</p>
 <p><span class="math display">\[
 \hat \beta_j \sim N(\beta_j, se(\hat \beta_j))
 \]</span></p>
@@ -266,7 +270,7 @@ se(\hat \beta_j) = \sqrt{I_{jj}(\hat \beta)}
 <p>es decir, los elementos de la diagonal de la matriz <span class="math inline">\(I(\hat \beta)\)</span>.</p>
 </div>
 <div id="contrastes-de-hipótesis-individuales" class="section level2" number="1.2">
-<h2 number="1.2"><span class="header-section-number">1.2</span> Contrastes de hipótesis individuales</h2>
+<h2><span class="header-section-number">1.2</span> Contrastes de hipótesis individuales</h2>
 <p>Para resolver contrastes del tipo:</p>
 <p><span class="math display">\[
 H_0 : \beta_j = 0 \\
@@ -288,7 +292,7 @@ str(d)</code></pre>
 ##  $ Service        : int  19 16 21 16 19 17 22 21 27 19 ...
 ##  $ Price          : int  50 43 35 52 24 36 51 61 179 42 ...</code></pre>
 <pre class="r"><code>#d$InMichelin = factor(d$InMichelin)</code></pre>
-<p>Estimamos los parámetros del modelo:</p>
+<p>Estimamos los parámetros del modelo (se van a utilizar las funciones de R del archivo <a href="logit_funciones.R">logit_funciones.R</a>):</p>
 <pre class="r"><code># cargamos las funciones que vamos a utilizar
 source(&quot;logit_funciones.R&quot;)
 
@@ -375,7 +379,7 @@ summary(m1)</code></pre>
 ## Number of Fisher Scoring iterations: 6</code></pre>
 </div>
 <div id="intervalos-de-confianza" class="section level2" number="1.3">
-<h2 number="1.3"><span class="header-section-number">1.3</span> Intervalos de confianza</h2>
+<h2><span class="header-section-number">1.3</span> Intervalos de confianza</h2>
 <p>Partimos de nuevo del estadístico de Wald:</p>
 <p><span class="math display">\[
 \frac{\hat \beta_j - \beta_j}{se(\hat \beta_j)} \sim N(0,1)

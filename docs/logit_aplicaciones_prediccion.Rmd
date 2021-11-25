@@ -1,0 +1,168 @@
+---
+title: "Aplicaciones del modelo de regresión lineal: cálculo de predicciones"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Predicción de $\pi_i$
+
+Sea el modelo de regresión logística
+
+$$
+P(Y_i = y_i) = \pi_i^{y_i} (1 - \pi_i)^{1-y_i}, \quad y_i = 0,1, \quad i = 1,2,\ldots,n
+$$
+
+donde:
+
+$$
+\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+$$
+
+
+
+$$
+x_i = 
+\begin{bmatrix}
+1 \\ x_{1i} \\ x_{2i} \\ \cdots \\ x_{ki}
+\end{bmatrix}
+, \quad
+\beta = 
+\begin{bmatrix}
+\beta_0 \\ \beta_1 \\ \beta_2 \\ \cdots \\ \beta_k
+\end{bmatrix}
+$$
+
+Estamos interesados en el valor de la respuesta para los regresores $x_p^T = [1 \ x_{1p} \ x_{2p} \ \cdots \ x_{kp}]$. Por tanto, el valor predicho de $\pi_i$ en $x_p$ es:
+
+$$
+\hat \pi_p = \frac{exp(x_p^T \hat \beta)}{1 + exp(x_p^T \hat \beta)}
+$$
+
+donde $\hat \beta$ es el vector de parámetros estimados:
+
+$$
+\hat \beta = 
+\begin{bmatrix}
+\hat \beta_0 \\ \hat \beta_1 \\ \hat \beta_2 \\ \cdots \\ \hat \beta_k
+\end{bmatrix}
+$$
+
+# Intervalo de confianza para $\pi_p$
+
+Se tiene que
+
+$$
+\hat \beta \sim N(\beta,(X^T W X)^{-1})
+$$
+
+Por tanto
+
+$$
+x_p^T \hat \beta \sim N(x_p^T \beta, x_p^T (X^T W X)^{-1} x_p)
+$$
+ya que
+
+$$
+E[x_p^T \hat \beta] = x_p^T E[\hat \beta] = x_p^T \beta
+$$
+y
+
+$$
+Var[x_p^T \hat \beta]  = x_p^T Var[\hat \beta] x_p = x_p^T (X^T W X)^{-1} x_p
+$$
+
+Por tanto, el intervalo de confianza para $x_p^T \beta$ es
+
+$$
+x_p^T \hat \beta - z_{\alpha/2} \sqrt{x_p^T (X^T W X)^{-1} x_p} \leq x_p^T \beta \leq x_p^T \hat \beta + z_{\alpha/2} \sqrt{x_p^T (X^T W X)^{-1} x_p}
+$$
+
+Si llamamos:
+
+$$
+L_p = x_p^T \hat \beta - z_{\alpha/2} \sqrt{x_p^T (X^T W X)^{-1} x_p} \\
+U_p = x_p^T \hat \beta + z_{\alpha/2} \sqrt{x_p^T (X^T W X)^{-1} x_p}
+$$
+
+se tiene que
+
+$$
+\frac{exp(L_p)}{1+exp(L_p)} \leq \pi_p \leq \frac{exp(U_p)}{1+exp(U_p)}
+$$
+
+donde se recuerda que
+
+$$
+\pi_p = \frac{exp(x_p^T \beta)}{1 + exp(x_p^T \beta)}
+$$
+
+# Ejemplos
+
+## Variable respuesta binaria
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+```
+
+Primero estimamos el modelo:
+
+```{r}
+m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m1)
+```
+
+Queremos calcular la predicción en Food = 22, Decor = 25, Service = 24, Price = 75:
+
+```{r}
+xp = c(1,22,25,24,75)
+beta_e = coef(m1)
+( pi_p = exp(t(xp) %*% beta_e)/(1 + exp(t(xp) %*% beta_e)) ) 
+```
+
+Para calcular el intervalo de confianza:
+
+```{r}
+source("logit_funciones.R")
+H = hess_logL(coef(m1),model.matrix(m1))
+xp = matrix(xp, ncol = 1)
+(se = sqrt(- t(xp) %*% solve(H) %*% xp ))
+```
+
+```{r}
+alfa = 0.05
+Lp = t(xp) %*% beta_e - qnorm(1-alfa/2)*se
+Up = t(xp) %*% beta_e + qnorm(1-alfa/2)*se
+# limite inferior intrevalo confianza
+exp(Lp)/(1+exp(Lp))
+# limite superior intrevalo confianza
+exp(Up)/(1+exp(Up))
+```
+
+
+Las predicciones son:
+
+```{r}
+xp = data.frame(Food = 22, Decor = 25, Service = 24, Price = 75)
+(pred = predict(m1, newdata = xp, type = "response", se.fit = T))
+pred$fit - qnorm(1-alfa/2)*pred$se.fit
+pred$fit + qnorm(1-alfa/2)*pred$se.fit
+```
+
+La mejor opción es predecir el link directamente:
+
+```{r}
+link = t(xp) %*% beta_e
+(pred = predict(m1, newdata = xp, type = "link", se.fit = T))
+```
+
+
+Queremos predecir ahora si un Restaurante con Food = 22, Decor = 19, Service = 24, Price = 55 va a ser clasificado que está en la Guía Michelín o que no está. Para eso, adoptamos el criterio: si  $\hat P(Y_p = 1) = \hat \pi_p > 0.5$, entonces $Y_p = 1$. En este caso, como $\hat \pi_p = $ `r pi_p`, la predicción es que ese restaurante va a estar incluido en la Guía Michelín. Además, el intervalo de confianza está muy por encima de 0.5, luego tenemos mucha confianza en esa decisión.
+
+## Variable respuesta binomial
+

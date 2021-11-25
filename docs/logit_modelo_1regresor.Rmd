@@ -121,7 +121,7 @@ Para estimar los parámetros del modelo ($\beta_0$ y $\beta_1$) se utiliza el m�
 La función de verosimilitud es la probabilidad de obtener la muestra dada. Para un sola observación:
 
 $$
-P(Y_i = y_i) = \pi_i^{y_i} (1 - \pi_i)^{1-y_i}, i = 1,2,\ldots,n
+P(Y_i = y_i) = \pi_i^{y_i} (1 - \pi_i)^{1-y_i}, \quad y_i = 0,1, \quad i = 1,2,\ldots,n
 $$
 
 Efectivamente
