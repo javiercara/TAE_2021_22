@@ -1,5 +1,5 @@
 ---
-title: 'Modelo de regresión logística con k regresores'
+title: 'Modelo de regresión de Poisson'
 output:
   html_document:
     number_sections: yes
@@ -12,32 +12,33 @@ output:
 
 # Modelo
 
-El archivo *MichelinNY.csv* contiene linformación de 164 restaurantes franceses incluidos en la guía *Zagat Survey 2006: New York City Restaurants*.
+Durante la guerra del Vietnam, la armada de los Estados Unidos empleó diferentes tipos de bombarderos en misiones para destruir puentes, carreteras, y otros objetivos de transporte. Entre ellos destacaban el A-4 Skyhawk y el A-6 Intruder. El archivo *Aircraft_Damage.csv* contiene la información 30 misiones donde participaron estos aviones:
 
 ```{r}
-d = read.csv("datos/MichelinNY.csv")
+d = read.csv("datos/Aircraft_Damage.csv")
 str(d)
 ```
 
+- damage: numero de zonas donde el bombardero presentaba daños debido a las defensas antibombarderos;
+- bomber: variable cualitativa, vale 0 para el A-4 y 1 para el A-6;
+- load: carga de bombas (en toneladas);
+- experience: número de meses de experiencia en vuelo de la tripulación.
 
-El objetivo es utilizar un modelo que relacione una serie de regresores con una variable respuesta binaria:
+El objetivo es utilizar un modelo que relacione el número de zonas con daño y el resto de variables. En este caso la variable respuesta no es normal; y tampoco es binomial. Cuando la variable respuesta sea del tipo "número de veces que ocurre algo" se utiliza una variable de Poisson. 
+
+El modelo de Poisson se define como
 
 $$
-y_i = f(x_{1i}, x_{2i}, \cdots, x_{ki}) + u_i
+P(Y_i = y_i) = \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!}, \quad y_i = 0,1,2,3,\ldots
 $$
-
-donde en este caso $y_i = \{0,1\}$. Para ello se definen las siguientes probabilidades:
-
-- $P(y_i = 1) = \pi_i$
-- $P(y_i = 0) = 1 - \pi_i$.
 
 donde:
 
 $$
-\pi_i = \frac{exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki})}{1 + exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki})}
+\lambda_i = exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki}) = exp(x_i^T \beta)
 $$
 
-Se puede escribir que
+ya que
 
 $$
 \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki} =
@@ -50,71 +51,45 @@ $$
 = x_i^T \beta
 $$
 
-Es decir
+Otra forma de expresarlo es:
 
 $$
-\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+Y_i = f(x_{1i}, x_{2i}, \cdots, x_{ki}) + u_i
 $$
 
-
-Como se admite que $E[u_i] = 0$:
+donde $y_i = 0,1,2,3,\cdots$. Se admite que $E[u_i] = 0$:
 
 $$
 E[y_i] = f(x_{1i}, x_{2i}, \cdots, x_{ki})
 $$
 
-Como $y_i$ toma valores 1 y 0 con probabilidades $\pi_i$ y $1-\pi_i$ se tiene que:
+Las variables de Poisson cumplen que $E[Y_i] = \lambda_i$, por lo que:
 
 $$
-E[y_i] = 1 \cdot \pi_i + 0 \cdot (1-\pi_i) = \pi_i
-$$
-
-$$
-f(x_{1i}, x_{2i}, \cdots, x_{ki}) = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+f(x_{1i}, x_{2i}, \cdots, x_{ki}) = exp(x_i^T \beta)
 $$
 
 # Estimación de los parámetros del modelo: máxima verosimilitud
-
-Para estimar los parámetros del modelo ($\beta_0$ y $\beta_1$) se utiliza el método de máxima verosimilitud, que consiste en:
-
-- Definir la función logaritmo de la verosimilitud;
-- La estimación de los parámetros son aquellos que maximizan la funcion log-verosimilitud.
 
 ## La función de verosimilitud
 
 La función de verosimilitud es la probabilidad de obtener la muestra dada. Por tanto, dada la muestra $\{y_1,y_2, \cdots, y_n \}$, la probabilidad de obtener dicha muestra es:
 
 $$
-P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} 
+P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!} 
 $$
 
 Se denomina función de verosimilitud a la probabilidad de obtener la muestra:
 
 $$
-L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i}
+L(\beta) = \prod_{i=1}^{n} \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!}
 $$
 
 El logaritmo de la función de verosimilitud es:
 
 $$
-log L(\beta) = log \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} = \sum_{i=1}^{n}(y_i log\pi_i +  (1-y_i) log(1 - \pi_i))
+log L(\beta) = log \prod_{i=1}^{n} \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!} = \sum_{i=1}^{n}(-\lambda_i + y_i log(\lambda_i) + log(y_i!))
 $$
-
-$$
-= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(1 - \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) \right)
-$$
-
-$$
-= \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(\frac{1}{1 + exp(x_i^T \beta)}\right) \right)
-$$
-
-$$
-= \sum_{i=1}^{n}( y_i log(exp(x_i^T \beta) - y_i log (1 + exp(x_i^T \beta)) -  (1-y_i) log(1 + exp(x_i^T \beta)) )
-$$
-$$
-= \sum_{i=1}^{n}( y_i (x_i^T \beta) - log (1 + exp(x_i^T \beta)) )
-$$
-
 En R, la función de verosimilitud la podemos calcular así:
 
 ```{r}
@@ -154,7 +129,7 @@ $$
 \frac{\partial logL(\beta)}{\partial \beta_k} \\
 \end{bmatrix}
 = 
-X^T(y  - \pi)
+X^T(y - \lambda)
 =
 \begin{bmatrix}
 0 \\
@@ -180,13 +155,13 @@ y =
 y_1 \\ y_2 \\ \cdots \\ y_n
 \end{bmatrix}
 , \quad
-\pi = 
+\lambda = 
 \begin{bmatrix}
-\pi_1 \\ \pi_2 \\ \cdots \\ \pi_n
+\lambda_1 \\ \lambda_2 \\ \cdots \\ \lambda_n
 \end{bmatrix}
 $$
 
-Sin embargo no es posible despejar las incógnitas del vector $\beta$ de las ecuaciones anteriores. El máximo de la función log-verosimilitud se tiene que hacer numéricamente.
+El máximo de la función log-verosimilitud se tiene que hacer numéricamente.
 
 En los siguientes apartados se va a necesitar la matriz de derivadas segundas o matriz hessiana. Su valor es:
 
@@ -206,7 +181,7 @@ $$
 donde $W$ es una matriz diagonal con
 
 $$
-W_{ii} = \pi_i(1-\pi_i)
+W_{ii} = \lambda_i
 $$
 
 En R:
@@ -253,6 +228,8 @@ X = cbind(rep(1,nrow(d)), d[,3:6])
 hess_logL(beta, X)
 nlme::fdHess(beta,logL, y = d$InMichelin, X)
 ```
+
+Las funciones que calculan el logaritmo de la verosimilitud, el gradiente y el hessiano se han incluido en el archivo (poisson_funciones.R)
 
 ## Algoritmo de Newton-Raphson
 
@@ -316,6 +293,7 @@ mle$par
 ## Estimacion con R
 
 ```{r}
-m2 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+d$bomber = factor(d$bomber, labels = c("A4","A6"))
+m2 = glm(damage ~ bomber + load + experience, data = d, family = poisson)
 summary(m2)
 ```

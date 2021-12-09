@@ -1,0 +1,61 @@
+---
+title: "Análisis de los residuos en el modelo logit"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Residuos del modelo logit
+
+Los residuos del modelo se definen como siempre:
+
+$$
+e_i = y_i - \hat{y}_i = y_i - \hat{\pi}_i, \quad i = 1, \ldots, n
+$$
+
+Se definen también los residuos de Pearson:
+
+$$
+r_i = \frac{e_i}{\sqrt{\hat{\pi}_i(1-\hat{\pi}_i)}}
+$$
+
+El gráfico de los residuos de Pearson frente a los valores previstos, $\hat{\pi}_i$, mostrará los datos siguiendo dos curvas: 
+
+- los puntos con y = 0 estarán en $r_i = \frac{\hat{\pi}_i}{\sqrt{\hat{\pi}_i(1-\hat{\pi}_i)}}$.
+- los puntos con y = 1 estarán en $r_i = \frac{1-\hat{\pi}_i}{\sqrt{\hat{\pi}_i(1-\hat{\pi}_i)}}$.
+
+El análisis de estos gráficos no es tan directo como en el caso de regresión lineal, ya que los datos seguirán esas curvas independientemente de si el modelo es adecuado o no. 
+
+# Ejemplo
+
+Se estima el siguiente modelo de regresión logística:
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+m = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m)
+```
+
+Los resiudos son:
+
+```{r}
+pi_e = predict(m, type = "response")
+ei = d$InMichelin - pi_e
+ri = ei/sqrt(pi_e*(1-pi_e))
+plot(pi_e,ri)
+```
+
+Se observa que hay un dato con comportamiento diferente al resto. 
+
+```{r}
+pos = which.max(ri)
+d[pos,]
+```
+
+Se trata del restaurante Paradou, que a pesar de tener puntuaciones muy bajas está incluido en la Guía Michelín.
+

@@ -59,19 +59,21 @@ output:
 1. Modelo de regresión logística
     a. [Modelo con un regresor](logit_modelo_1regresor.html) [(pdf)](logit_modelo_1regresor.pdf)
     b. [Modelo con K regresores](logit_modelo_Kregresores.html) [(pdf)](logit_modelo_Kregresores.pdf)
-    c. [Regresión logística binomial](logit_modelo_binomial.html)[(pdf)](logit_modelo_binomial.pdf)
+    c. [Regresión logística binomial](logit_modelo_binomial.html) [(pdf)](logit_modelo_binomial.pdf)
     c. [Regresores cualitativos](logit_modelo_cualitativas.html) [(pdf)](logit_modelo_cualitativas.pdf)
 2. Inferencia en el modelo de regresión logística
     a. [Estimadores y su distribución. Inferencia](logit_inferencia.html) [(pdf)](logit_inferencia.pdf)
+    b. [Bootstrap](logit_inferencia_bootstrap.html) [(pdf)](logit_bootstrap_bootstrap.pdf)
 3. Aplicaciones del modelo de regresión lineal
     a. [Cálculo de predicciones](lm_aplicaciones_prediccion.html) [(pdf)](lm_aplicaciones_prediccion.pdf)
     b. [Análisis de las relaciones entre variables](lm_aplicaciones_explicacion.html) [(pdf)](lm_aplicaciones_explicacion.pdf)
-4. Residuos
-    a. [Análisis de los residuos del modelo](lm_diagnosis.html) [(pdf)](lm_diagnosis.pdf)
-4. Validación cruzada
-    a. [Validación cruzada](lm_diagnosis.html) [(pdf)](lm_diagnosis.pdf)
-    
+4. Bondad de ajuste
+    a. [Bondad del ajuste](logit_bondadajuste.html)[(pdf)](logit_bondadajuste.pdf)
+5. Residuos
+    a. [Análisis de los residuos del modelo](logit_diagnosis.html) [(pdf)](logit_diagnosis.pdf)
+
 ### Regresión de Poisson
+1. [Modelo y su estimación](poisson_modelo.html) [(pdf)](poisson_modelo_.pdf)
 
 ### Modelos lineales generalizados
 

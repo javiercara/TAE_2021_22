@@ -572,10 +572,8 @@ names(m_best_summary)</code></pre>
 <p>Justificación: el RSS disminuye con el número de regresores <em>k</em>. Por eso penalizamos incluyendo un término que contiene a <em>k</em>.</p>
 <p>Los coeficinetes estimados con ese modelo son:</p>
 <pre class="r"><code>coef(m_best,10)</code></pre>
-<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts 
-##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726 
-##      Assists 
-##    0.2831680</code></pre>
+<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts      Assists 
+##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726    0.2831680</code></pre>
 </div>
 <div id="método-forward-stepwise" class="section level2" number="3.3">
 <h2><span class="header-section-number">3.3</span> Método Forward-Stepwise</h2>
@@ -640,10 +638,8 @@ summary(m_fwd)</code></pre>
 which.min(m_fwd_summary$cp)</code></pre>
 <pre><code>## [1] 10</code></pre>
 <pre class="r"><code>coef(m_fwd,10)</code></pre>
-<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts 
-##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726 
-##      Assists 
-##    0.2831680</code></pre>
+<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts      Assists 
+##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726    0.2831680</code></pre>
 </div>
 <div id="método-backward-stepwise" class="section level2" number="3.4">
 <h2><span class="header-section-number">3.4</span> Método Backward-Stepwise</h2>
@@ -708,10 +704,8 @@ summary(m_bwd)</code></pre>
 which.min(m_bwd_summary$cp)</code></pre>
 <pre><code>## [1] 10</code></pre>
 <pre class="r"><code>coef(m_bwd,10)</code></pre>
-<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts 
-##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726 
-##      Assists 
-##    0.2831680</code></pre>
+<pre><code>##  (Intercept)        AtBat         Hits        Walks       CAtBat        CRuns         CRBI       CWalks    DivisionW      PutOuts      Assists 
+##  162.5354420   -2.1686501    6.9180175    5.7732246   -0.1300798    1.4082490    0.7743122   -0.8308264 -112.3800575    0.2973726    0.2831680</code></pre>
 <p>Es el mismo que antes.</p>
 </div>
 <div id="eligiendo-el-mejor-modelo-utilizando-subconjuntos-de-validación" class="section level2" number="3.5">

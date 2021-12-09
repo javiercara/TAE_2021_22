@@ -290,7 +290,7 @@ E[y_i] = f(x_{1i}, x_{2i}, \cdots, x_{ki})
 \]</span></p>
 <p>Como <span class="math inline">\(y_i\)</span> toma valores 1 y 0 con probabilidades <span class="math inline">\(\pi_i\)</span> y <span class="math inline">\(1-\pi_i\)</span> se tiene que:</p>
 <p><span class="math display">\[
-E[y_i] = 1*\pi_i + 0*(1-\pi_i) = \pi_i
+E[y_i] = 1 \cdot \pi_i + 0 \cdot (1-\pi_i) = \pi_i
 \]</span></p>
 <p><span class="math display">\[
 f(x_{1i}, x_{2i}, \cdots, x_{ki}) = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
@@ -315,7 +315,7 @@ L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i}
 \]</span></p>
 <p>El logaritmo de la función de verosimilitud es:</p>
 <p><span class="math display">\[
-log L(\beta) = \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} = \sum_{i=1}^{n}(y_i log\pi_i +  (1-y_i) log(1 - \pi_i))
+log L(\beta) = log \prod_{i=1}^{n} \pi_i^{y_i} (1 - \pi_i)^{1-y_i} = \sum_{i=1}^{n}(y_i log\pi_i +  (1-y_i) log(1 - \pi_i))
 \]</span></p>
 <p><span class="math display">\[
 = \sum_{i=1}^{n}\left( y_i log \left(\frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) +  (1-y_i) log\left(1 - \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}\right) \right)
@@ -389,7 +389,7 @@ y_1 \\ y_2 \\ \cdots \\ y_n
 \pi_1 \\ \pi_2 \\ \cdots \\ \pi_n
 \end{bmatrix}
 \]</span></p>
-<p>Sin embargo no es posible despejar las incóginitas del vector <span class="math inline">\(\beta\)</span> de las ecuaciones anteriores. El máximo de la función log-verosimilitud se tiene que hacer numéricamente.</p>
+<p>Sin embargo no es posible despejar las incógnitas del vector <span class="math inline">\(\beta\)</span> de las ecuaciones anteriores. El máximo de la función log-verosimilitud se tiene que hacer numéricamente.</p>
 <p>En los siguientes apartados se va a necesitar la matriz de derivadas segundas o matriz hessiana. Su valor es:</p>
 <p><span class="math display">\[
 \frac{\partial log L(\beta)}{\partial \beta \partial \beta^T}

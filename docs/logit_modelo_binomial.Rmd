@@ -280,7 +280,6 @@ Comprobacion:
 ```{r}
 beta = c(-12,1)
 grad_logLb(beta, y, x, m)
-
 ```
 
 ```{r}

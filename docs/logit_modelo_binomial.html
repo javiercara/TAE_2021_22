@@ -245,7 +245,7 @@ div.tocify {
 
 
 <div id="regresión-logística-binaria-y-regresión-logística-binomial" class="section level1" number="1">
-<h1 number="1"><span class="header-section-number">1</span> Regresión logística binaria y regresión logística binomial</h1>
+<h1><span class="header-section-number">1</span> Regresión logística binaria y regresión logística binomial</h1>
 <pre class="r"><code>d = read.csv(&quot;datos/MichelinNY.csv&quot;)</code></pre>
 <p>Los datos que analizamos con el modelo logit pueden estar codificados en dos maneras diferentes:</p>
 <ul>
@@ -259,7 +259,7 @@ div.tocify {
 ## 4          1              44   19    23      16    52
 ## 5          0               A   23    12      19    24
 ## 6          0          A.O.C.   18    17      17    36</code></pre>
-<p>Como la variable analizada, InMichelin, está codificada como 0 - 1, el modelo se denomina regresión logística binaria. Es el modelo que se ha estimado en las secciones precedentes.</p>
+<p>Como la variable analizada, InMichelin, está codificada como 0 - 1, el modelo se denomina <strong>regresión logística binaria</strong>. Es el modelo que se ha estimado en las secciones precedentes.</p>
 <ul>
 <li>Con datos agrupados. En lugar de ceros y unos podemos indicar el numero de restaurantes que pertenecen a la Guía Michelin y que tienen un valor de la variable Food determinado. Por ejemplo:</li>
 </ul>
@@ -285,15 +285,11 @@ div.tocify {
 <p><span class="math display">\[
 P(y_i = 8) = \binom{33}{8} \pi_i^8(1 - \pi_i)^{33-8}
 \]</span></p>
-<p>donde <span class="math inline">\(\pi_i\)</span> es la probabilidad de que un restaurante con puntuación 20 esté en la Guía, <span class="math inline">\(\pi_i\)</span> = 8/33. Calculando:</p>
-<pre class="r"><code>pi_i = 8/33
-choose(33,8)*pi_i^8*(1-pi_i)^(33-8)</code></pre>
-<pre><code>## [1] 0.1602432</code></pre>
-<p>De manera general, si <span class="math inline">\(Y_i\)</span> : “número de restaurantes incluidos en la Guía para un <span class="math inline">\(x_i\)</span> dado”</p>
+<p>donde <span class="math inline">\(\pi_i\)</span> es la probabilidad de que un restaurante con puntuación 20 esté en la Guía. De manera general, si <span class="math inline">\(Y_i\)</span> : “número de restaurantes incluidos en la Guía para un <span class="math inline">\(x_i\)</span> dado” se tiene que:</p>
 <p><span class="math display">\[
 P(Y_i = y_i) = \binom{m_i}{y_i} \pi_i^{y_i}(1-\pi_i)^{m_i-y_i}
 \]</span></p>
-<p>donde <span class="math inline">\(m_i\)</span> es el número total de restaurantes para un <span class="math inline">\(x_i\)</span> dado; <span class="math inline">\(\pi_i = y_i/m_i\)</span>. De la variable <span class="math inline">\(Y_i\)</span> se dice que tiene distribución binomial (de ahí que se utilice la familia binomial en glm). Algunas propiedades de la distribución binomial son:</p>
+<p>donde <span class="math inline">\(m_i\)</span> es el número total de restaurantes para <span class="math inline">\(x_i\)</span>. De la variable <span class="math inline">\(Y_i\)</span> se dice que tiene distribución binomial (de ahí que se utilice la familia binomial en glm). Algunas propiedades de la distribución binomial son:</p>
 <ul>
 <li>Los valores que puede tomar la variable son <span class="math inline">\(Y_i = 0, 1, \cdots, m_i\)</span>.</li>
 <li>La esperanza es: <span class="math inline">\(E[Y_i] = m_i \cdot p_i\)</span>.</li>
@@ -301,28 +297,46 @@ P(Y_i = y_i) = \binom{m_i}{y_i} \pi_i^{y_i}(1-\pi_i)^{m_i-y_i}
 </ul>
 </div>
 <div id="modelo" class="section level1" number="2">
-<h1 number="2"><span class="header-section-number">2</span> Modelo</h1>
-<p>El modelo sería:</p>
+<h1><span class="header-section-number">2</span> Modelo</h1>
+<p>Los datos disponibles son</p>
 <p><span class="math display">\[
-y_i = f(x_i) + u_i, \quad E[u_i] = 0
+\begin{matrix}
+y_1 &amp; x_1 &amp; m_1 \\
+y_2 &amp; x_2 &amp; m_2 \\
+\cdots &amp; \cdots &amp; \cdots \\
+y_n &amp; x_n &amp; m_n \\
+\end{matrix}
 \]</span></p>
-<p>donde</p>
-<ul>
-<li><span class="math inline">\(x_i\)</span>: puntuación de la comida.</li>
-<li><span class="math inline">\(Y_i\)</span>: número de restaurantes en la Guía para un <span class="math inline">\(x_i\)</span> dado.</li>
-</ul>
+<p>Al igual que el modelo binario se trabaja con probabilidades:</p>
 <p><span class="math display">\[
-f(x_i) = E[Y_i] = m_i \cdot \pi_i
+P(Y_i = y_i) = \binom{m_i}{y_i} \pi_i^{y_i}(1-\pi_i)^{m_i-y_i}, \quad y_i = 0,1, \cdots, m_i
 \]</span></p>
 <p>donde se adopta que:</p>
 <p><span class="math display">\[
 \pi_i = \frac{exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})}
 \]</span></p>
+<p>Ambas ecuaciones forman el modelo que vamos a utilizar para analizar los datos incluidos en la variable d1.</p>
+<p>Otra forma de ver el modelo es:</p>
+<p><span class="math display">\[
+Y_i = f(x_i) + u_i, \quad E[u_i] = 0, 
+\]</span></p>
+<p>Por tanto:</p>
+<p><span class="math display">\[
+E[Y_i] = f(x_i)
+\]</span></p>
+<p>Com <span class="math inline">\(Y_i\)</span> tiene distribución binomial, su esperanza es</p>
+<p><span class="math display">\[
+E[Y_i] = m_i \cdot \pi_i
+\]</span></p>
+<p>lo que implica que</p>
+<p><span class="math display">\[
+Y_i = \frac{m_i \cdot exp(\beta_0 + \beta_1 x_{i})}{1 + exp(\beta_0 + \beta_1 x_{i})} + u_i, \quad E[u_i] = 0
+\]</span></p>
 </div>
 <div id="estimación-de-los-parámetros" class="section level1" number="3">
-<h1 number="3"><span class="header-section-number">3</span> Estimación de los parámetros</h1>
+<h1><span class="header-section-number">3</span> Estimación de los parámetros</h1>
 <div id="la-función-de-verosimilitud" class="section level2" number="3.1">
-<h2 number="3.1"><span class="header-section-number">3.1</span> La función de verosimilitud</h2>
+<h2><span class="header-section-number">3.1</span> La función de verosimilitud</h2>
 <p>Dada la muestra <span class="math inline">\(\{Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n \}\)</span>, la probabilidad de obtener dicha muestra es:</p>
 <p><span class="math display">\[
 P(Y_1 = y_1, Y_2 = y_2, \cdots, Y_n = y_n) = \prod_{i=1}^{n} P(Y_i = y_i) = \prod_{i=1}^{n} \binom{m_i}{y_i} \pi_i^{y_i} (1 - \pi_i)^{m_i-y_i} 
@@ -369,7 +383,7 @@ logLb(beta,y,x,m)</code></pre>
 ## -646.0697</code></pre>
 </div>
 <div id="el-máximo-de-la-función-de-verosimilitud" class="section level2" number="3.2">
-<h2 number="3.2"><span class="header-section-number">3.2</span> El máximo de la función de verosimilitud</h2>
+<h2><span class="header-section-number">3.2</span> El máximo de la función de verosimilitud</h2>
 <p>Tenemos que derivar e igualar a cero:</p>
 <p><span class="math display">\[
 \frac{\partial logL(\beta)}{\partial \beta_0} = \sum_{i=1}^{n} \left( y_i  - \frac{m_i exp(\beta_0 + \beta_1 x_{i})}{1+exp(\beta_0 + \beta_1 x_{i})} \right) = \sum_{i=1}^{n} (y_i  - m_i \pi_i)
@@ -493,7 +507,7 @@ nlme::fdHess(beta,logLb, y, x , m)</code></pre>
 </div>
 </div>
 <div id="el-máximo-de-la-función-de-verosimilitud-1" class="section level1" number="4">
-<h1 number="4"><span class="header-section-number">4</span> El máximo de la función de verosimilitud</h1>
+<h1><span class="header-section-number">4</span> El máximo de la función de verosimilitud</h1>
 <p>Lo vamos a calcular con optim():</p>
 <pre class="r"><code>logLb_optim = function(beta,y,x,m){
   logL = logLb(beta,y,x,m)
@@ -519,7 +533,7 @@ mle = optim(par = beta_i, fn = logLb_optim, y, x, m, gr = NULL, method = &quot;B
 <pre><code>## (Intercept)           x 
 ## -10.8416674   0.5012424</code></pre>
 <div id="estimacion-con-r" class="section level2" number="4.1">
-<h2 number="4.1"><span class="header-section-number">4.1</span> Estimacion con R</h2>
+<h2><span class="header-section-number">4.1</span> Estimacion con R</h2>
 <pre class="r"><code>y = cbind(d1[,2], d1[,1]) # la primera columna tiene que ser la de 1
 x = as.integer(row.names(d1))
 m2 = glm(y ~ x, family = binomial)
@@ -549,7 +563,7 @@ summary(m2)</code></pre>
 </div>
 </div>
 <div id="interpretación-de-pi_i" class="section level1" number="5">
-<h1 number="5"><span class="header-section-number">5</span> Interpretación de <span class="math inline">\(\pi_i\)</span></h1>
+<h1><span class="header-section-number">5</span> Interpretación de <span class="math inline">\(\pi_i\)</span></h1>
 <p>En el caso de datos agrupados, <span class="math inline">\(\pi_i\)</span> es el valor de la probabilidad de que un restaurante esté en la Guía Michelin dada su puntuación. Podemos representar los valores obtenidos de los datos junto a los valores estimados por el modelo para estas probabilidades:</p>
 <pre class="r"><code>prob_observada = d1[,2]/m
 prob_estimada = exp(coef(m2)[1] + coef(m2)[2]*x)/(1+exp(coef(m2)[1] + coef(m2)[2]*x))

@@ -1,0 +1,161 @@
+---
+title: "Aplicaciones del modelo de regresión lineal: analisis de relaciones entre variables"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Datos
+
+```{r}
+d = read.table("datos/titanic.txt", header = T)
+str(d)
+```
+
+donde Survived = 1 indica que el pasajero sobrevivió, y Survived = 0 indica que el pasajero no sobrevivió.
+
+Primero convertimos a factor las variables:
+
+```{r}
+d$Class = factor(d$Class)
+d$Age = factor(d$Age)
+d$Sex = factor(d$Sex)
+```
+
+# Análisis
+
+## Probabilidad de supervivencia de la tripulacion frente a los pasajeros
+
+```{r}
+m1 = glm(Survived ~ Class, data = d, family = binomial)
+summary(m1)
+```
+
+El nivel de referencia de Class es tripulación (Crew). Por tanto, $\beta_1$ representa diferencias en la probabilidad de supervivencia entre Crew y First; $\beta_2$ representa diferencias entre Crew y Second; $\beta_3$ representa diferencias entre Crew y Third. 
+
+Los pvalores para $\beta_1$ y $\beta_2$ son menores que 0.05, por lo que son distintas de cero, luego hay diferencias en la probabilidad de supervivencia. Como $\hat \beta_1$ = `r m1$coeff[2]` > 0, la probabilidad de supervivencia de la primera clase es mayor que la de la tripulación; lo mismo para la segunda clase. 
+
+El pvalor de $\beta_3$ es mayor que 0.05, luego $\beta_3 = 0$, no hay diferencias entre tripulación y tercera clase.
+
+
+Estos resultados se pueden comprobar numéricamente:
+
+```{r}
+predict(m1, newdata = data.frame(Class = c("Crew", "First", "Second", "Third")), type = "response")
+```
+
+## Probabilidad de supervivencia de primera y segunda clase
+
+```{r}
+d$Class = relevel(d$Class, ref = "Second")
+m2 = glm(Survived ~ Class, data = d, family = binomial)
+summary(m2)
+```
+
+El pvalor de $\beta_2$ es menor que 0.05, luego hay diferencias entre probabilidades de supervivencia. En concreto, como $\beta_2 > 0$, la probabilidad de supervivencia de la primera clase es mayor.
+
+## Probabilidad de supervivencia de mujeres de tripulación y mujeres pasajeras
+
+Podemos utilizar relevel de nuevo:
+
+```{r}
+d$Class = relevel(d$Class, ref = "Crew")
+m3a = glm(Survived ~ Class * Sex, data = d, family = binomial)
+summary(m3a)
+```
+
+Aunque se puede utilizar relevel, quiero mantener el orden de los niveles Crew-First-Seconf-Third. Para ello:
+
+```{r}
+d$Class = factor(d$Class, levels = c("Crew","First","Second","Third"))
+m3 = glm(Survived ~ Class * Sex, data = d, family = binomial)
+summary(m3)
+```
+
+Como vemos, los resultados son iguales. Se han creado las siguientes variables auxiliares (entre paréntesis la abreviatura)
+
+- ClassFirst (F)
+- ClassSecond (S)
+- ClassThird (T)
+- SexMale (M)
+
+El modelo que se ha estimado es:
+
+$$
+P(Y_i = 1) = \frac{exp(\beta_0 + \beta_1 F_i  + \beta_2 S_i  + \beta_3 T_i  + \beta_4 M_i  + \beta_5 F_i \cdot M_i  + \beta_6 S_i \cdot M_i  + \beta_7 T_i \cdot M_i )}{1 + exp(\beta_0 + \beta_1 F_i  + \beta_2 S_i  + \beta_3 T_i  + \beta_4 M_i  + \beta_5 F_i \cdot M_i  + \beta_6 S_i \cdot M_i  + \beta_7 T_i \cdot M_i )}
+$$
+
+Para mujeres de tripulación F = 0, S = 0, T = 0, M = 0. Por tanto el modelo es:
+
+$$
+P(Y_i = 1) = \frac{exp(\beta_0)}{1 + exp(\beta_0)}
+$$
+
+Para mujeres de tercera clase, por ekemplo, F = 0, S = 0, T = 1, M = 1. Por tanto el modelo es:
+
+$$
+P(Y_i = 1) = \frac{exp(\beta_0 + \beta_3 )}{1 + exp(\beta_0 + \beta_3 )}
+$$
+
+Por tanto, $\beta_3$ modela las diferencias de probabilidad de supervivencia. Como pvalor de $\beta_3 < 0.05$, las probabilidades no son iguales. Como $\beta_3 < 0$, las probabilidades de las mujeres de tripulación son mayores que las mujeres de tercera clase. 
+
+## Probabilidad de supervivencia de hombres de tripulación y hombres pasajeros
+
+Utilizamos el mismo modelo del apartado anterior.
+
+Para hombres de tripulación F = 0, S = 0, T = 0, M = 1. Por tanto el modelo es:
+
+$$
+P(Y_i = 1) = \frac{exp(\beta_0 + \beta_4)}{1 + exp(\beta_0 + \beta_4)}
+$$
+
+Para hombres de tercera clase, F = 0, S = 0, T = 1, M = 1. Por tanto el modelo es:
+
+$$
+P(Y_i = 1) = \frac{exp(\beta_0 + \beta_3 + \beta_4 + \beta_7)}{1 + exp(\beta_0 + \beta_3 + \beta_4 + \beta_7 )}
+$$
+
+Por tanto, $\beta_3 + \beta_7$ modela las diferencias de probabilidad de supervivencia. Se formula el siguiente contraste:
+
+$$
+\beta_3 + \beta_7 = 0 \\
+\beta_3 + \beta_7 \neq 0
+$$
+
+El estadístico del contraste es:
+
+$$
+\hat \beta_3 + \hat \beta_7 \sim N(\beta_3 + \beta_7, se(\hat \beta_3 + \hat \beta_7))
+$$
+
+donde 
+
+$$
+se(\hat \beta_3 + \hat \beta_7) = \sqrt{V_{44} + V_{88} + 2V_{48}} \\
+V = Var(\hat \beta)
+$$
+
+```{r}
+source("logit_funciones.R")
+h = hess_logL(coef(m3), model.matrix(m3))
+V = -solve(h)
+(se = sqrt(V[4,4] + V[8,8] + 2*V[4,8]))
+```
+
+El estadístico se reescribe como
+
+$$
+z = \frac{\hat \beta_3 + \hat \beta_7}{se(\hat \beta_3 + \hat \beta_7)}
+$$
+
+```{r}
+(z = (coef(m3)[4] + coef(m3)[8])/se)
+(pvalor = 2*(1-pnorm(abs(z))))
+```
+
+Como es menor que 0.05 SI hay diferencias en la probabilidad de superviviencia. Como $\hat \beta_3 + \hat \beta_7 = `r coef(m3)[4]` + `r coef(m3)[8]` = `r coef(m3)[4] + coef(m3)[8]` < 0$, la probabilidad de supervivencia de los hombres de tripulación es mayor que la de los hombres de tercera clase.

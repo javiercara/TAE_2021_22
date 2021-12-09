@@ -1,0 +1,128 @@
+---
+title: "Bondad de ajuste"
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+# Introduccion
+
+Se estima el siguiente modelo de regresión logística:
+
+```{r}
+d = read.csv("datos/MichelinNY.csv")
+m = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m)
+```
+El objetivo es analizar como de bueno es el modelo de regresión logística que se ha estimado.
+
+# Criterio de la matriz de confusión
+
+El método más sencillo es calcular el error de predicción del modelo en la base de datos. Esto se hace con la matriz de confusión.
+
+```{r}
+pred_prob = predict(m, newdata = d, type = "response")
+n = nrow(d)
+pred_y = rep(0, n)
+pred_y[pred_prob > 0.5] = 1
+# matriz de confusion
+(t = table(d$InMichelin, pred_y))
+```
+
+Por tanto, se han predicho bien `r t[1,1]` + `r t[2,2]` = `r t[1,1] + t[2,2]` datos de un todal de `r n`. Se han mal bien `r t[1,2]` + `r t[2,1]` = `r t[1,2] + t[2,1]` datos de un todal de `r n`. El error del modelo es `r t[1,2] + t[2,1]` / `r n` = `r round((t[1,2] + t[2,1])/n*100,2)`%.
+
+Cuando el objetivo de principal de la regresión logística sea la predicción, la bondad del modelo se puede calcular construyendo la matriz de confusión en un test set:
+
+```{r}
+set.seed(123)
+pos_train = sample(1:n, round(0.8*n), replace = F)
+train = d[pos_train,]
+test = d[-pos_train,]
+```
+
+```{r}
+m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = train, family = binomial)
+test_prob = predict(m1, newdata = test, type = "response")
+n_test = nrow(test)
+pred_y = rep(0, n_test)
+pred_y[test_prob > 0.5] = 1
+# matriz de confusion
+(t = table(test$InMichelin, pred_y))
+```
+
+# R-cuadrado en regresión logística
+
+Otra manera de calcular la bondad del modelo es definir un $R^2$ de manera similar a como se hizo en regresión lineal. Se han propuesto muchas formas de definir este $R^2$, pero quizá la más usada es:
+
+$$
+R^2 = 1 - \frac{D_1}{D_0}
+$$
+donde D es la desviación del modelo (deviance en inglés). Se calcula como el doble de la verosimilitud del modelo calculada en los parámetros estimados (en valor absoluto):
+
+$$
+D = |2logL(\hat \beta)|
+$$
+
+$$
+log L(\hat \beta) = \sum_{i=1}^{n}(y_i log \hat \pi_i +  (1-y_i) log(1 - \hat \pi_i))
+$$
+
+$$
+\hat \pi_i = \frac{exp(x_i^T \hat \beta)}{1 + exp(x_i^T \hat \beta)}
+$$
+
+Se definen dos desviaciones:
+
+- D1: la desviación del modelo analizado.
+- D0: la desviación del modelo en el que solo se estima $\beta_0$.
+
+```{r}
+source("logit_funciones.R")
+(D1 = abs(2*logL(coef(m),d$InMichelin,model.matrix(m))) )
+```
+
+```{r}
+m0 = glm(InMichelin ~ 1, data = d, family = binomial)
+summary(m0)
+```
+
+```{r}
+(D0 = abs(2*logL(coef(m0),d$InMichelin,model.matrix(m0))) )
+```
+
+```{r}
+(R2 = 1 - D1/D0)
+```
+
+Si $R^2 \approx 1$ el modelo se ajusta muy bien a los datos.
+
+# Contraste de bondad de ajuste
+
+Se puede resolver el siguiente contraste:
+
+- H0: el modelo estimado es adecuado.
+- H1: el modelo estimado no es adecuado.
+
+El estadístico del contraste es
+
+$$
+G = D_0 - D_1 \sim \chi^2_{n-k-1}
+$$
+
+Para valores grandes del estadístico, quiere decir que la verosimilitud de ambos modelos es muy diferente, luego el modelo es adecuado. Para valores pequelos de G, ambos modelos son muy parecidos, luego los regresores no describen bien la variable respuesta.
+
+En este caso:
+
+```{r}
+(G = D0 - D1)
+n = nrow(d)
+k = length(coef(m)) - 1
+(pvalor = 1-pchisq(G, n - k - 1))
+```
+
+Luego el modelo es muy adecuado.
