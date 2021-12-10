@@ -248,8 +248,8 @@ div.tocify {
 <h1><span class="header-section-number">1</span> Introduccion</h1>
 <p>Se estima el siguiente modelo de regresión logística:</p>
 <pre class="r"><code>d = read.csv(&quot;datos/MichelinNY.csv&quot;)
-m = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
-summary(m)</code></pre>
+m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m1)</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = InMichelin ~ Food + Decor + Service + Price, family = binomial, 
@@ -281,7 +281,7 @@ summary(m)</code></pre>
 <div id="criterio-de-la-matriz-de-confusión" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Criterio de la matriz de confusión</h1>
 <p>El método más sencillo es calcular el error de predicción del modelo en la base de datos. Esto se hace con la matriz de confusión.</p>
-<pre class="r"><code>pred_prob = predict(m, newdata = d, type = &quot;response&quot;)
+<pre class="r"><code>pred_prob = predict(m1, newdata = d, type = &quot;response&quot;)
 n = nrow(d)
 pred_y = rep(0, n)
 pred_y[pred_prob &gt; 0.5] = 1
@@ -297,8 +297,8 @@ pred_y[pred_prob &gt; 0.5] = 1
 pos_train = sample(1:n, round(0.8*n), replace = F)
 train = d[pos_train,]
 test = d[-pos_train,]</code></pre>
-<pre class="r"><code>m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = train, family = binomial)
-test_prob = predict(m1, newdata = test, type = &quot;response&quot;)
+<pre class="r"><code>m2 = glm(InMichelin ~ Food + Decor + Service + Price, data = train, family = binomial)
+test_prob = predict(m2, newdata = test, type = &quot;response&quot;)
 n_test = nrow(test)
 pred_y = rep(0, n_test)
 pred_y[test_prob &gt; 0.5] = 1
@@ -330,7 +330,7 @@ log L(\hat \beta) = \sum_{i=1}^{n}(y_i log \hat \pi_i +  (1-y_i) log(1 - \hat \p
 <li>D0: la desviación del modelo en el que solo se estima <span class="math inline">\(\beta_0\)</span>.</li>
 </ul>
 <pre class="r"><code>source(&quot;logit_funciones.R&quot;)
-(D1 = abs(2*logL(coef(m),d$InMichelin,model.matrix(m))) )</code></pre>
+(D1 = abs(2*logL(coef(m1),d$InMichelin,model.matrix(m1))) )</code></pre>
 <pre><code>## [1] 148.3969</code></pre>
 <pre class="r"><code>m0 = glm(InMichelin ~ 1, data = d, family = binomial)
 summary(m0)</code></pre>
@@ -359,25 +359,56 @@ summary(m0)</code></pre>
 <pre><code>## [1] 0.3427622</code></pre>
 <p>Si <span class="math inline">\(R^2 \approx 1\)</span> el modelo se ajusta muy bien a los datos.</p>
 </div>
-<div id="contraste-de-bondad-de-ajuste" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Contraste de bondad de ajuste</h1>
-<p>Se puede resolver el siguiente contraste:</p>
+<div id="contraste-para-un-grupo-de-coeficientes" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Contraste para un grupo de coeficientes</h1>
+<p>Supongamos que tenemos dos modelos:</p>
+<p><span class="math display">\[
+\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+\]</span></p>
+<p><span class="math display">\[
+\pi_{Ai} = \frac{exp(x_{Ai}^T \beta_A)}{1 + exp(x_{Ai}^T \beta_A)}
+\]</span></p>
+<p>donde <span class="math inline">\(\beta_A\)</span> es un subconjunto de <span class="math inline">\(\beta\)</span>. Supongamos que <span class="math inline">\(dim(\beta_A) = m+1\)</span> y <span class="math inline">\(dim(\beta) = k+1\)</span>, con <span class="math inline">\(m&lt;k\)</span>. Si <span class="math inline">\(\beta_B\)</span> representa los parámetros que están en <span class="math inline">\(\beta\)</span> pero no están en <span class="math inline">\(\beta_A\)</span>, se puede resolver el siguiente contraste:</p>
+<p><span class="math display">\[ H_0 : \beta_B = 0, \quad H_1: \beta_B \neq = 0 \]</span></p>
+<p>En el caso de que la hipótesis nula sea cierta, se tiene que:</p>
+<p><span class="math display">\[
+G = D_A - D_1 \sim \chi^2_{k-m}
+\]</span></p>
+<p>donde <span class="math inline">\(D_1\)</span> es la desviación del modelo con parámetros <span class="math inline">\(\beta\)</span> y <span class="math inline">\(D_A\)</span> es la desviación del modelo con parámetros <span class="math inline">\(\beta_A\)</span>.</p>
 <ul>
-<li>H0: el modelo estimado es adecuado.</li>
-<li>H1: el modelo estimado no es adecuado.</li>
+<li>Si <span class="math inline">\(G \geq \chi^2_{\alpha}\)</span> se rechaza la hipótesis nula.</li>
+<li>Si <span class="math inline">\(G &lt; \chi^2_{\alpha}\)</span> no se rechaza la hipótesis nula.</li>
+</ul>
+<p>Es decir, valores grandes del estadístico significa que la verosimilitud de ambos modelos es muy diferente, luego <span class="math inline">\(\beta_B \neq 0\)</span>. Para valores pequeños de G, ambos modelos son muy parecidos, luego los regresores <span class="math inline">\(\beta_B\)</span> no aportan nada al modelo, es decir, <span class="math inline">\(\beta_B = 0\)</span>.</p>
+<p>Por ejemplo, queremos resolver el contraste con hipótesis nula <span class="math inline">\(\beta_1 = \beta_2 = 0\)</span>:</p>
+<pre class="r"><code>mA = glm(InMichelin ~ Service + Price, data = d, family = binomial)
+(DA = abs(2*logL(coef(mA),d$InMichelin,model.matrix(mA))) )</code></pre>
+<pre><code>## [1] 161.0588</code></pre>
+<pre class="r"><code>(G = DA - D1)</code></pre>
+<pre><code>## [1] 12.66182</code></pre>
+<pre class="r"><code># valor crítico del contraste
+k = length(coef(m1))
+m = length(coef(mA))
+qchisq(0.95, df = k-m)</code></pre>
+<pre><code>## [1] 5.991465</code></pre>
+<p>Luego se rechaza la hipótesis nula.</p>
+</div>
+<div id="contraste-de-bondad-de-ajuste" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Contraste de bondad de ajuste</h1>
+<p>Utilizando el contraste anterior entre el modelo con todos los regresores y el modelo con solo <span class="math inline">\(\beta_0\)</span> se puede analizar la bondad del modelo. Es decir, se puede contrastar:</p>
+<ul>
+<li>H0: el modelo estimado NO es adecuado (<span class="math inline">\(\beta_1 = \beta_2 = \cdots = \beta_k = 0\)</span>)</li>
+<li>H1: el modelo estimado es adecuado.</li>
 </ul>
 <p>El estadístico del contraste es</p>
 <p><span class="math display">\[
-G = D_0 - D_1 \sim \chi^2_{n-k-1}
-\]</span></p>
-<p>Para valores grandes del estadístico, quiere decir que la verosimilitud de ambos modelos es muy diferente, luego el modelo es adecuado. Para valores pequelos de G, ambos modelos son muy parecidos, luego los regresores no describen bien la variable respuesta.</p>
-<p>En este caso:</p>
+G = D_0 - D_1 \sim \chi^2_{k}
+\]</span> En este caso:</p>
 <pre class="r"><code>(G = D0 - D1)</code></pre>
 <pre><code>## [1] 77.39187</code></pre>
-<pre class="r"><code>n = nrow(d)
-k = length(coef(m)) - 1
-(pvalor = 1-pchisq(G, n - k - 1))</code></pre>
-<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>k = length(coef(m1)) - 1
+(pvalor = 1-pchisq(G, k))</code></pre>
+<pre><code>## [1] 6.661338e-16</code></pre>
 <p>Luego el modelo es muy adecuado.</p>
 </div>
 

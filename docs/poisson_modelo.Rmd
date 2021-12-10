@@ -1,18 +1,18 @@
 ---
 title: 'Modelo de regresión de Poisson'
 output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
   html_document:
     number_sections: yes
     toc: yes
     toc_float: yes
-  pdf_document:
-    number_sections: yes
-    toc: yes
 ---
 
 # Modelo
 
-Durante la guerra del Vietnam, la armada de los Estados Unidos empleó diferentes tipos de bombarderos en misiones para destruir puentes, carreteras, y otros objetivos de transporte. Entre ellos destacaban el A-4 Skyhawk y el A-6 Intruder. El archivo *Aircraft_Damage.csv* contiene la información 30 misiones donde participaron estos aviones:
+Durante la guerra del Vietnam, la armada de los Estados Unidos empleó diferentes tipos de bombarderos en misiones para destruir puentes, carreteras, y otros objetivos de transporte. Entre ellos destacaban el A-4 Skyhawk y el A-6 Intruder. El archivo *Aircraft_Damage.csv* contiene la información de 30 misiones donde participaron estos aviones:
 
 ```{r}
 d = read.csv("datos/Aircraft_Damage.csv")
@@ -38,6 +38,12 @@ $$
 \lambda_i = exp(\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \cdots + \beta_k x_{ki}) = exp(x_i^T \beta)
 $$
 
+Esta última expresión se puede reescribir como:
+
+$$
+\lambda_i = exp(x_i^T \beta)
+$$
+
 ya que
 
 $$
@@ -51,16 +57,16 @@ $$
 = x_i^T \beta
 $$
 
-Otra forma de expresarlo es:
+Otra forma de expresar el modelo es:
 
 $$
-Y_i = f(x_{1i}, x_{2i}, \cdots, x_{ki}) + u_i
+Y_i = f(x_{1i}, x_{2i}, \cdots, x_{ki}) + U_i
 $$
 
-donde $y_i = 0,1,2,3,\cdots$. Se admite que $E[u_i] = 0$:
+donde $Y_i = 0,1,2,3,\cdots$. Se admite que $E[u_i] = 0$, por lo que:
 
 $$
-E[y_i] = f(x_{1i}, x_{2i}, \cdots, x_{ki})
+E[Y_i] = f(x_{1i}, x_{2i}, \cdots, x_{ki})
 $$
 
 Las variables de Poisson cumplen que $E[Y_i] = \lambda_i$, por lo que:
@@ -88,32 +94,8 @@ $$
 El logaritmo de la función de verosimilitud es:
 
 $$
-log L(\beta) = log \prod_{i=1}^{n} \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!} = \sum_{i=1}^{n}(-\lambda_i + y_i log(\lambda_i) + log(y_i!))
+log L(\beta) = log \prod_{i=1}^{n} \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!} = \sum_{i=1}^{n}(-\lambda_i + y_i log(\lambda_i) - log(y_i!))
 $$
-En R, la función de verosimilitud la podemos calcular así:
-
-```{r}
-logL = function(beta,y,X){
-  # asumimos que beta es un vector 
-  # beta = [beta0 beta1 .. betak]
-  
-  n = length(y)
-  suma = 0
-  for (i in 1:n){
-    suma = suma + y[i]*sum(X[i,]*beta) - 
-      log(1 + exp( sum(t(X[i,])*beta) ))
-  }
-  return(suma)
-}
-```
-
-Por ejemplo, para $\beta_0 = -2$ y $\beta_1 = \beta_2 = \beta_3 = \beta_4 = 0.5$, la función de verosimilitud vale:
-
-```{r}
-beta = c(-2,0.05,0.05,0.05,0.05)
-X = cbind(rep(1,nrow(d)), d[,3:6])
-logL(beta,d$InMichelin,X)
-```
 
 ## El máximo de la función de verosimilitud
 
@@ -184,109 +166,31 @@ $$
 W_{ii} = \lambda_i
 $$
 
-En R:
+## Funciones en R
+
+Las funciones que calculan el logaritmo de la verosimilitud, el gradiente y el hessiano se han incluido en el archivo [poisson_funciones.R](poisson_funciones.R).
 
 ```{r}
-grad_logL = function(beta,y,X){
-  X = as.matrix(X)
-  n = length(y)
-  y = matrix(y, nrow = n, ncol = 1)
-  pi = matrix(0, nrow = n, ncol = 1)
-  for (i in 1:n){
-    pi[i,1] = exp(sum(X[i,]*beta))/(1 + exp(sum(X[i,]*beta)))
-  }
-  grad = t(X) %*% (y - pi)
-  return(grad)
-}
-```
-
-Comprobacion:
-
-```{r}
-beta = c(-2,0.05,0.05,0.05,0.05)
-X = cbind(rep(1,nrow(d)), d[,3:6])
-grad_logL(beta, d$InMichelin, X)
-```
-
-```{r}
-hess_logL = function(beta,X){
-  X = as.matrix(X)
-  n = nrow(X)
-  W = matrix(0, nrow = n, ncol = n)
-  for (i in 1:n){
-    pi = exp(sum(X[i,]*beta))/(1 + exp(sum(X[i,]*beta)))
-    W[i,i] = pi*(1-pi)
-  }
-  hess = - t(X) %*% W %*% X
-  return(hess)
-}
-```
-
-```{r}
-beta = c(-2,0.05,0.05,0.05,0.05)
-X = cbind(rep(1,nrow(d)), d[,3:6])
+source("poisson_funciones.R")
+beta = c(-0.5,0.5,0.5,-0.05)
+y = d$damage
+X = cbind(rep(1,nrow(d)), d[,2:4])
+logL(beta,y,X)
+grad_logL(beta,y,X)
 hess_logL(beta, X)
-nlme::fdHess(beta,logL, y = d$InMichelin, X)
+nlme::fdHess(beta,logL, y = d$damage, X)
 ```
+## Cálculo del máximo mediante el algoritmo BFGS
 
-Las funciones que calculan el logaritmo de la verosimilitud, el gradiente y el hessiano se han incluido en el archivo (poisson_funciones.R)
+La función optim() solo minimiza. Pero como calcular el máximo de logL equivale a minimizar -logL, se define la función logL_optim en la que simplemente se le cambia el signo a la verosimilitud.
 
-## Algoritmo de Newton-Raphson
-
-El algoritmo de Newton-Raphson para la función log-verosimilitud es:
-
-$$
-\beta_{k+1} = \beta_k - \alpha H^{-1}_k G_k
-$$
-
-donde $\beta = [\beta_0 \ \beta_1 \ \cdots \beta_k]^T$. Este algoritmo para la función log-verosimilitud se puede implementar en R de manera sencilla:
+Como punto de partida del algoritmo podemos utilizar por ejemplo la solución de mínimos cuadrados:
 
 ```{r}
-Newton_logL = function(beta_i, y, X, max_iter = 100, tol = 10^(-6), alfa = 0.1){
-  
-  # punto de partida
-  beta = beta_i
-  
-  iter = 1
-  tol1 = Inf
-  while ((iter <= max_iter) & (tol1 > tol)){
-    f = logL(beta,y,X)
-    grad = grad_logL(beta,y,X)
-    hess = hess_logL(beta,X)
-    beta = beta - alfa*solve(hess) %*% grad
-    f1 = logL(beta,y,X)
-    tol1 = abs((f1-f)/f)
-    print(paste("Iteracion ",iter," log-verosimilitud ",f1))
-    iter = iter + 1
-  }
-  return(beta)
-}
-```
-
-Como punto de partida podemos utilizar por ejemplo la solución de mínimos cuadrados:
-
-```{r}
-m = lm(InMichelin ~ Food + Decor + Service + Price, data = d)
+m = lm(damage ~ bomber + load + experience, data = d)
 beta_i = coef(m)
-X = cbind(rep(1,nrow(d)), d[,3:6])
-Newton_logL(beta_i,d$InMichelin,X)
-```
-
-## Algoritmo BFGS
-
-La función que vamos a minimizar es:
-
-```{r}
-logLa = function(beta,y,X){
-  logL = logL(beta,y,X)
-  return(-logL)
-}
-```
-
-Utilizando el mismo punto de partida que para el algoritmo Newton:
-
-```{r}
-mle = optim(par = beta_i, fn = logLa, y = d$InMichelin, X = X, gr = NULL, method = "BFGS", hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))
+X = model.matrix(m)
+mle = optim(par = beta_i, fn = logL_optim, y = d$damage, X = X, gr = NULL, method = "BFGS", hessian = TRUE, control = list(trace=1, REPORT = 1, maxit = 200))
 mle$par
 ```
 

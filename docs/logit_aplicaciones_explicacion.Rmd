@@ -1,13 +1,13 @@
 ---
-title: "Aplicaciones del modelo de regresión lineal: analisis de relaciones entre variables"
+title: "Aplicaciones del modelo de regresión logística: analisis de relaciones entre variables"
 output: 
+  pdf_document:
+    number_sections: true
+    toc: true
   html_document:
     number_sections: true
     toc: true
     toc_float: true
-  pdf_document:
-    number_sections: true
-    toc: true
 ---
 
 # Datos

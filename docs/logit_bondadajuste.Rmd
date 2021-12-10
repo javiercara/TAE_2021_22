@@ -16,8 +16,8 @@ Se estima el siguiente modelo de regresión logística:
 
 ```{r}
 d = read.csv("datos/MichelinNY.csv")
-m = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
-summary(m)
+m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+summary(m1)
 ```
 El objetivo es analizar como de bueno es el modelo de regresión logística que se ha estimado.
 
@@ -26,7 +26,7 @@ El objetivo es analizar como de bueno es el modelo de regresión logística que 
 El método más sencillo es calcular el error de predicción del modelo en la base de datos. Esto se hace con la matriz de confusión.
 
 ```{r}
-pred_prob = predict(m, newdata = d, type = "response")
+pred_prob = predict(m1, newdata = d, type = "response")
 n = nrow(d)
 pred_y = rep(0, n)
 pred_y[pred_prob > 0.5] = 1
@@ -46,8 +46,8 @@ test = d[-pos_train,]
 ```
 
 ```{r}
-m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = train, family = binomial)
-test_prob = predict(m1, newdata = test, type = "response")
+m2 = glm(InMichelin ~ Food + Decor + Service + Price, data = train, family = binomial)
+test_prob = predict(m2, newdata = test, type = "response")
 n_test = nrow(test)
 pred_y = rep(0, n_test)
 pred_y[test_prob > 0.5] = 1
@@ -83,7 +83,7 @@ Se definen dos desviaciones:
 
 ```{r}
 source("logit_funciones.R")
-(D1 = abs(2*logL(coef(m),d$InMichelin,model.matrix(m))) )
+(D1 = abs(2*logL(coef(m1),d$InMichelin,model.matrix(m1))) )
 ```
 
 ```{r}
@@ -101,28 +101,67 @@ summary(m0)
 
 Si $R^2 \approx 1$ el modelo se ajusta muy bien a los datos.
 
+# Contraste para un grupo de coeficientes
+
+Supongamos que tenemos dos modelos:
+
+$$
+\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+$$
+
+$$
+\pi_{Ai} = \frac{exp(x_{Ai}^T \beta_A)}{1 + exp(x_{Ai}^T \beta_A)}
+$$
+
+donde $\beta_A$ es un subconjunto de $\beta$. Supongamos que $dim(\beta_A) = m+1$ y $dim(\beta) = k+1$, con $m<k$. Si $\beta_B$ representa los parámetros que están en $\beta$ pero no están en $\beta_A$, se puede resolver el siguiente contraste:
+
+$$ H_0 : \beta_B = 0, \quad H_1: \beta_B \neq = 0 $$
+
+En el caso de que la hipótesis nula sea cierta, se tiene que:
+
+$$
+G = D_A - D_1 \sim \chi^2_{k-m}
+$$
+
+donde $D_1$ es la desviación del modelo con parámetros $\beta$ y $D_A$ es la desviación del modelo con parámetros $\beta_A$.
+
+- Si $G \geq \chi^2_{\alpha}$ se rechaza la hipótesis nula.
+- Si $G < \chi^2_{\alpha}$ no se rechaza la hipótesis nula.
+
+Es decir, valores grandes del estadístico significa que la verosimilitud de ambos modelos es muy diferente, luego $\beta_B \neq 0$. Para valores pequeños de G, ambos modelos son muy parecidos, luego los regresores $\beta_B$ no aportan nada al modelo, es decir, $\beta_B = 0$.
+
+Por ejemplo, queremos resolver el contraste con hipótesis nula $\beta_1 = \beta_2 = 0$:
+
+```{r}
+mA = glm(InMichelin ~ Service + Price, data = d, family = binomial)
+(DA = abs(2*logL(coef(mA),d$InMichelin,model.matrix(mA))) )
+(G = DA - D1)
+# valor crítico del contraste
+k = length(coef(m1))
+m = length(coef(mA))
+qchisq(0.95, df = k-m)
+```
+
+Luego se rechaza la hipótesis nula.
+
 # Contraste de bondad de ajuste
 
-Se puede resolver el siguiente contraste:
+Utilizando el contraste anterior entre el modelo con todos los regresores y el modelo con solo $\beta_0$ se puede analizar la bondad del modelo. Es decir, se puede contrastar:
 
-- H0: el modelo estimado es adecuado.
-- H1: el modelo estimado no es adecuado.
+- H0: el modelo estimado NO es adecuado ($\beta_1 = \beta_2 = \cdots = \beta_k = 0$)
+- H1: el modelo estimado es adecuado.
 
 El estadístico del contraste es
 
 $$
-G = D_0 - D_1 \sim \chi^2_{n-k-1}
+G = D_0 - D_1 \sim \chi^2_{k}
 $$
-
-Para valores grandes del estadístico, quiere decir que la verosimilitud de ambos modelos es muy diferente, luego el modelo es adecuado. Para valores pequelos de G, ambos modelos son muy parecidos, luego los regresores no describen bien la variable respuesta.
-
 En este caso:
 
 ```{r}
 (G = D0 - D1)
-n = nrow(d)
-k = length(coef(m)) - 1
-(pvalor = 1-pchisq(G, n - k - 1))
+k = length(coef(m1)) - 1
+(pvalor = 1-pchisq(G, k))
 ```
 
 Luego el modelo es muy adecuado.

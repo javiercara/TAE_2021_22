@@ -1,27 +1,27 @@
 ---
 title: "Aplicaciones del modelo de regresión logística: cálculo de predicciones"
 output: 
-  pdf_document:
-    number_sections: true
-    toc: true
   html_document:
     number_sections: true
     toc: true
     toc_float: true
+  pdf_document:
+    number_sections: true
+    toc: true
 ---
 
 # Predicción de $\pi_i$
 
-Sea el modelo de regresión logística
+Sea el modelo de regresión de Poisson
 
 $$
-P(Y_i = y_i) = \pi_i^{y_i} (1 - \pi_i)^{1-y_i}, \quad y_i = 0,1, \quad i = 1,2,\ldots,n
+P(Y_i = y_i) = \frac{e^{-\lambda_i} \lambda_i^{y_i}}{y_i!}, \quad y_i = 0,1,2,3,\ldots
 $$
 
 donde:
 
 $$
-\pi_i = \frac{exp(x_i^T \beta)}{1 + exp(x_i^T \beta)}
+\lambda_i = exp(x_i^T \beta)
 $$
 
 
@@ -41,7 +41,7 @@ $$
 Estamos interesados en el valor de la respuesta para los regresores $x_p^T = [1 \ x_{1p} \ x_{2p} \ \cdots \ x_{kp}]$. El valor predicho de $\pi_i$ en $x_p$ es:
 
 $$
-\hat \pi_p = \frac{exp(x_p^T \hat \beta)}{1 + exp(x_p^T \hat \beta)}
+\hat \lambda_p = exp(x_p^T \hat \beta)
 $$
 
 donde $\hat \beta$ es el vector de parámetros estimados:
@@ -93,40 +93,40 @@ $$
 se tiene que
 
 $$
-\frac{exp(L_p)}{1+exp(L_p)} \leq \pi_p \leq \frac{exp(U_p)}{1+exp(U_p)}
+exp(L_p) \leq \lambda_p \leq exp(U_p)
 $$
 
 donde se recuerda que
 
 $$
-\pi_p = \frac{exp(x_p^T \beta)}{1 + exp(x_p^T \beta)}
+\lambda_p = exp(x_p^T \beta)
 $$
 
 # Ejemplos
 
 ```{r}
-d = read.csv("datos/MichelinNY.csv")
+d = read.csv("datos/Aircraft_Damage.csv")
 ```
 
 Primero estimamos el modelo:
 
 ```{r}
-m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
+m1 = glm(damage ~ bomber + load + experience, data = d, family = poisson)
 summary(m1)
 ```
 
-Queremos calcular la predicción en Food = 22, Decor = 25, Service = 24, Price = 75:
+Queremos calcular la predicción en bomber = A-44 (0), load = 6, experience = 75:
 
 ```{r}
-xp = c(1,22,25,24,75)
+xp = c(1,0,6,75)
 beta_e = coef(m1)
-( pi_p = exp(t(xp) %*% beta_e)/(1 + exp(t(xp) %*% beta_e)) ) 
+( lambda_p = exp(t(xp) %*% beta_e) ) 
 ```
 
 Para calcular el intervalo de confianza:
 
 ```{r}
-source("logit_funciones.R")
+source("poisson_funciones.R")
 H = hess_logL(coef(m1),model.matrix(m1))
 xp = matrix(xp, ncol = 1)
 (se = sqrt(- t(xp) %*% solve(H) %*% xp ))
@@ -137,17 +137,18 @@ alfa = 0.05
 Lp = t(xp) %*% beta_e - qnorm(1-alfa/2)*se
 Up = t(xp) %*% beta_e + qnorm(1-alfa/2)*se
 # limite inferior intrevalo confianza
-exp(Lp)/(1+exp(Lp))
+exp(Lp)
 # limite superior intrevalo confianza
-exp(Up)/(1+exp(Up))
+exp(Up)
 ```
 
 Con R, podemos predecir las probabilidades $\hat \pi_p$:
 
 ```{r}
-xp_df = data.frame(Food = 22, Decor = 25, Service = 24, Price = 75)
+xp_df = data.frame(bomber = 0, load = 6, experience = 75)
 (pred = predict(m1, newdata = xp_df, type = "response"))
 ```
+
 Para calcular el intervalo de confianza activamos la opción se.fit:
 
 ```{r}
@@ -176,15 +177,10 @@ alfa = 0.05
 Lp = pred$fit - qnorm(1-alfa/2)*pred$se.fit
 Up = pred$fit + qnorm(1-alfa/2)*pred$se.fit
 # limite inferior intervalo confianza
-exp(Lp)/(1+exp(Lp))
+exp(Lp)
 # limite superior intervalo confianza
-exp(Up)/(1+exp(Up))
+exp(Up)
 ```
 
-Hemos hecho la predicción de $\hat \pi_p$, probabilidades, pero queremos predecir si un Restaurante con Food = 22, Decor = 19, Service = 24, Price = 55 va a estar en la Guía Michelín o no. Para eso, adoptamos el criterio: 
 
-- si  $\hat P(Y_p = 1) = \hat \pi_p > 0.5$, entonces $Y_p = 1$, o lo que es lo mismo, el restaurante está en la Guía Michelin. 
-- si  $\hat P(Y_p = 1) = \hat \pi_p < 0.5$, entonces $Y_p = 0$, luego el restaurante no está en la Guía Michelin. 
-
-En este caso, como $\hat{\pi}_{p} = `r round(pi_p,2)`$, la predicción es que ese restaurante va a estar incluido en la Guía Michelín. Además, el intervalo de confianza está muy por encima de 0.5, luego tenemos mucha confianza en esa decisión.
 

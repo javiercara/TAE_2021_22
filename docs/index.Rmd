@@ -65,8 +65,8 @@ output:
     a. [Estimadores y su distribución. Inferencia](logit_inferencia.html) [(pdf)](logit_inferencia.pdf)
     b. [Bootstrap](logit_inferencia_bootstrap.html) [(pdf)](logit_bootstrap_bootstrap.pdf)
 3. Aplicaciones del modelo de regresión lineal
-    a. [Cálculo de predicciones](lm_aplicaciones_prediccion.html) [(pdf)](lm_aplicaciones_prediccion.pdf)
-    b. [Análisis de las relaciones entre variables](lm_aplicaciones_explicacion.html) [(pdf)](lm_aplicaciones_explicacion.pdf)
+    a. [Cálculo de predicciones](logit_aplicaciones_prediccion.html) [(pdf)](logit_aplicaciones_prediccion.pdf)
+    b. [Análisis de las relaciones entre variables](logit_aplicaciones_explicacion.html) [(pdf)](logit_aplicaciones_explicacion.pdf)
 4. Bondad de ajuste
     a. [Bondad del ajuste](logit_bondadajuste.html)[(pdf)](logit_bondadajuste.pdf)
 5. Residuos
