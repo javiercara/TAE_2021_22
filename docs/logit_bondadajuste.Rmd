@@ -115,7 +115,7 @@ $$
 
 donde $\beta_A$ es un subconjunto de $\beta$. Supongamos que $dim(\beta_A) = m+1$ y $dim(\beta) = k+1$, con $m<k$. Si $\beta_B$ representa los parámetros que están en $\beta$ pero no están en $\beta_A$, se puede resolver el siguiente contraste:
 
-$$ H_0 : \beta_B = 0, \quad H_1: \beta_B \neq = 0 $$
+$$ H_0 : \beta_B = 0, \quad H_1: \beta_B \neq 0 $$
 
 En el caso de que la hipótesis nula sea cierta, se tiene que:
 

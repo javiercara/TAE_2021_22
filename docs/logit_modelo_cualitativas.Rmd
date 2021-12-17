@@ -124,7 +124,7 @@ En el fondo estamos estimando P(Reject|Homeowner = "Y"), ya que
 Si queremos estimar el modelo m1 anterior tenemos que hacer:
 
 ```{r}
-d$Decision = relevel(d$Decision, ref = "Approve")
+d$Decision = relevel(d$Decision, ref = "Reject")
 m4 = glm(Decision ~ Homeowner, data = d, family = binomial)
 summary(m4)
 ```

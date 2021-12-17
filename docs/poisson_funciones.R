@@ -1,8 +1,3 @@
-# lambda
-lambda = function(beta,x){
-  lambda_i = exp(sum(beta*x))
-  return(lambda_i)
-}
 # Función de verosimilitud
 logL = function(beta,y,X){
   # asumimos que beta es un vector 
@@ -11,7 +6,7 @@ logL = function(beta,y,X){
   n = length(y)
   suma = 0
   for (i in 1:n){
-    lambda_i = lambda(beta,X[i,])
+    lambda_i = exp(sum(beta*X[i,]))
     suma = suma + y[i]*log(lambda_i) - lambda_i - log(factorial(y[i])) 
   }
   return(suma)
@@ -24,7 +19,7 @@ grad_logL = function(beta,y,X){
   y = matrix(y, nrow = n, ncol = 1)
   lambda = matrix(0, nrow = n, ncol = 1)
   for (i in 1:n){
-    lambda[i,1] = lambda(beta,X[i,])
+    lambda[i,1] = exp(sum(beta*X[i,]))
   }
   grad = t(X) %*% (y - lambda)
   return(grad)
@@ -36,7 +31,7 @@ hess_logL = function(beta,X){
   n = nrow(X)
   W = matrix(0, nrow = n, ncol = n)
   for (i in 1:n){
-    W[i,i] = lambda(beta,X[i,])
+    W[i,i] = lambda_i = exp(sum(beta*X[i,]))
   }
   hess = - t(X) %*% W %*% X
   return(hess)

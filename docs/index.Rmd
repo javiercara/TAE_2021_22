@@ -73,17 +73,26 @@ output:
     a. [Análisis de los residuos del modelo](logit_diagnosis.html) [(pdf)](logit_diagnosis.pdf)
 
 ### Regresión de Poisson
-1. [Modelo y su estimación](poisson_modelo.html) [(pdf)](poisson_modelo_.pdf)
+1. Modelo de regresión logística
+    a. [Modelo](poisson_modelo_.html) [(pdf)](poisson_modelo.pdf)
+2. Inferencia en el modelo de regresión logística
+    a. [Estimadores y su distribución. Inferencia](poisson_inferencia.html) [(pdf)](poisson_inferencia.pdf)
+3. Aplicaciones del modelo de regresión lineal
+    a. [Cálculo de predicciones](poisson_aplicaciones_prediccion.html) [(pdf)](poisson_aplicaciones_prediccion.pdf)
+4. Bondad de ajuste
+    a. Bondad del ajuste (No entra en el examen)
 
 ### Modelos lineales generalizados
 
 ## Árboles de clasificación y de regresión
 
-### Árboles de regresión
-
-### Árboles de clasificación
-
-### Random forests
+1. Árboles de regresión
+    a. [Arbol con un regresor](tree_regresion_1regresor.html) [(pdf)](tree_regresion_1regresor.pdf)
+    b. [Arbol con K regresores](tree_regresion_Kregresores.html) [(pdf)](tree_regresion_Kregresores.pdf)
+2. Árboles de clasificación
+    a. [Árboles de clasificación](tree_clasificacion.html) [(pdf)](tree_clasificacion.pdf) 
+3. Random Forest   
+    a. [Random Forest](tree_RandomForest.html) [(pdf)](tree_RandomForest.pdf)
 
 # Bibliografía
 

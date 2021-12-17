@@ -1,0 +1,141 @@
+---
+title: "Random Forests"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+---
+
+# Lectura de datos
+
+```{r cars}
+library(tree)
+d = read.csv('datos/kidiq.csv')
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+d$mom_work = factor(d$mom_work, labels = c("notrabaja", "trabaja23", "trabaja1_parcial", "trabaja1_completo"))
+```
+
+# Training set *vs* Test set
+
+Dividimos los datos en dos partes, una para entrenar el modelo y otra para calcular el error de predicción con datos diferentes de los utilizados para entrenar:
+
+```{r}
+set.seed(321)
+n = nrow(d)
+pos_train = sample(1:n,round(0.8*n)) # la mitad de los datos para entranamiento
+datos_train = d[pos_train,] # trainning set
+datos_test = d[-pos_train,] # test set
+```
+
+# Random Forest
+
+- Se remuestrea con reemplazamiento *B* veces (bootstrap).
+- Se estima un arbol para cada muestra, $f_b(x)$. Pero cada vez que se divide un nodo en cada arbol, se seleccionan aleatoriamente *m* regresores de los *p* disponibles. Por defecto, R considera $p/3$. En el caso de que m = p se denomina **BAGGING**.
+- Se calcula la predicción proporcionada por cada árbol, $\hat f_b(x)$.
+- Se promedian las predicciones.
+
+$$
+\hat f_{RF} = \frac{1}{B}\sum_{b=1}^B \hat f_b(x)
+$$
+
+- La gran ventaja de random forest frente a bagging es que funciona muy bien con datos que tienen variables correlacionadas.
+
+## mtry = 4 (**BAGGING**)
+
+```{r}
+library(randomForest)
+# numero total de regresores: 4
+rf1 = randomForest(kid_score ~ ., data = datos_train, mtry = 4, ntree = 500)
+```
+
+Error del modelo:
+
+```{r}
+yp_train_rf1 <- predict(rf1, newdata = datos_train)
+y_train = datos_train$kid_score 
+# error cuadratico medio en los datos de training
+( MSE_train_rf1 = mean((y_train - yp_train_rf1)^2) )
+```
+
+Error de predicción:
+
+```{r}
+# prediccion del consumo con los datos test
+yp_test_rf1 = predict(rf1, newdata = datos_test)
+
+# error del test set
+y_test = datos_test$kid_score
+(MSE_test_rf1 = mean((y_test - yp_test_rf1)^2))
+```
+
+## mtry = 3
+
+```{r}
+rf2 = randomForest(kid_score ~ ., data = datos_train, mtry = 3, ntree = 500)
+```
+
+Error del modelo:
+
+```{r}
+yp_train_rf2 <- predict(rf2, newdata = datos_train)
+# error cuadratico medio en los datos de training
+( MSE_train_rf2 = mean((y_train - yp_train_rf2)^2) )
+```
+
+Error de predicción:
+
+```{r}
+# prediccion del consumo con los datos test
+yp_test_rf2 = predict(rf2, newdata = datos_test)
+# error del test set
+(MSE_test_rf2 = mean((y_test - yp_test_rf2)^2))
+```
+
+## mtry = 2
+
+```{r}
+rf3 = randomForest(kid_score ~ ., data = datos_train, mtry = 2, ntree = 500)
+```
+
+Error del modelo:
+
+```{r}
+yp_train_rf3 <- predict(rf3, newdata = datos_train)
+# error cuadratico medio en los datos de training
+( MSE_train_rf3 = mean((y_train - yp_train_rf3)^2) ) 
+```
+
+Error de predicción:
+
+```{r}
+# prediccion del consumo con los datos test
+yp_test_rf3 = predict(rf3, newdata = datos_test)
+
+# error del test set
+(MSE_test_rf3 = mean((y_test - yp_test_rf3)^2))
+```
+
+
+# Importancia de variables
+
+```{r}
+rf4 = randomForest(kid_score ~ ., data = datos_train, mtry = 4, ntree = 500, importance = T)
+```
+
+```{r}
+importance(rf4)
+```
+
+- %IncMSE: descenso de la calidad de las predicciones realizadas en los datos *out of samples* cuando los valores de una variable dada se permutan aleatoriamente (sería como quitarla del modelo).
+
+- IncNodePurity: suma del descenso acumulado del RSS al partir por dicha variable.
+
+```{r}
+varImpPlot(rf4)
+```
+
+

@@ -1,18 +1,16 @@
 ---
 title: 'Estimadores y su distribución. Inferencia'
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
   html_document:
     number_sections: yes
     toc: yes
     toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
 ---
 
-# Inferencia de parámetros individuales
-
-## Distribución asintótica de los estimadores
+# Distribución asintótica de los estimadores
 
 Para muestras grandes, los estimadores de máxima verosimilitud tienen distribución asintótica normal. En concreto, se tiene que
 
@@ -45,12 +43,14 @@ $$
 
 es decir, los elementos de la diagonal de la matriz $I(\hat \beta)$.
 
-## Contrastes de hipótesis individuales
+# Contrastes de hipótesis individuales
 
 Para resolver contrastes del tipo:
 
 $$
-H_0 : \beta_j = 0 \\
+H_0 : \beta_j = 0
+$$
+$$
 H_1 : \beta_j \neq 0
 $$
 
@@ -64,36 +64,24 @@ A este método se lo conoce como método de Wald, o estadístico de [Wald](https
 
 Con R:
 
-```{r}
-d = read.csv("datos/MichelinNY.csv")
-str(d)
-#d$InMichelin = factor(d$InMichelin)
-```
-
 Estimamos los parámetros del modelo (se van a utilizar las funciones de R del archivo [logit_funciones.R](logit_funciones.R)):
 
 ```{r}
 # cargamos las funciones que vamos a utilizar
-source("logit_funciones.R")
-
-# punto de partida
-m = lm(InMichelin ~ Food + Decor + Service + Price, data = d)
-beta_i = coef(m)
-
-# matriz X
-X = cbind(rep(1,nrow(d)), d[,3:6])
-
-# estimacion con el algoritmo optim
-mle = optim(par = beta_i, fn = logL_optim, gr = NULL,
-  y = d$InMichelin, X = X, 
-  method = "BFGS", hessian = F, 
-  control = list(trace = 1, REPORT = 1, maxit = 200))
-(beta_e = mle$par)
+source("poisson_funciones.R")
+d = read.csv("datos/Aircraft_Damage.csv")
+d$bomber = factor(d$bomber, labels = c("A4","A6"))
 ```
 
 ```{r}
+m = glm(damage ~ bomber + load + experience, data = d, family = poisson)
+summary(m)
+```
+
+```{r}
+beta_e = coef(m)
 # matriz de información de Fisher
-I = -solve(hess_logL(beta_e,X))
+I = -solve(hess_logL(beta_e,model.matrix(m)))
 # standard error de los parámetros estimados
 (beta_se = sqrt(diag(I)))
 ```
@@ -108,16 +96,9 @@ I = -solve(hess_logL(beta_e,X))
 2*(1 - pnorm(abs(z)))
 ```
 
-Esta información se aporta cuando utilizamos la funcion glm():
+# Intervalos de confianza
 
-```{r}
-m1 = glm(InMichelin ~ Food + Decor + Service + Price, data = d, family = binomial)
-summary(m1)
-```
-
-## Intervalos de confianza
-
-Partimos de nuevo del estadístico de Wald:
+Partimos del estadístico de Wald:
 
 $$
 \frac{\hat \beta_j - \beta_j}{se(\hat \beta_j)} \sim N(0,1)
@@ -136,6 +117,36 @@ LS = beta_e + qnorm(1-alfa/2)*beta_se)
 ```
 
 ```{r}
-confint(m1, level = 1-alfa)
+confint(m, level = 1-alfa)
 ```
+
+# Bootstrap
+
+```{r warning=FALSE}
+set.seed(99)
+B = 500
+n = nrow(d)
+beta_B = matrix(0, nrow = B, ncol = 4)
+for (b in 1:B){
+  pos_b = sample(1:n, n, replace = T)
+  d_b = d[pos_b,]
+  m_b = glm(damage ~ bomber + load + experience, data = d_b, family = poisson)
+  beta_B[b,] = coef(m_b)
+}
+```
+
+- Standard errors calculados con bootstrap:
+
+```{r}
+apply(beta_B,2,sd)
+```
+
+- Invervalos de confianza calculados con bootstrap:
+
+```{r}
+alfa = 0.05
+apply(beta_B,2,quantile, probs = c(alfa/2,1-alfa/2))
+```
+
+
 

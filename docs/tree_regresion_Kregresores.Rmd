@@ -1,0 +1,168 @@
+---
+title: "Árboles de regresión: K regresores"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+---
+
+
+# Arbol con regresores cuantitativos y cualitativos
+
+```{r cars}
+library(rpart)
+d = read.csv('datos/kidiq.csv')
+d$mom_hs = factor(d$mom_hs, labels = c("no", "si"))
+d$mom_work = factor(d$mom_work, labels = c("notrabaja", "trabaja23", "trabaja1_parcial", "trabaja1_completo"))
+```
+
+```{r}
+# method = "anova" para modelos de regresion
+t1 = rpart(kid_score ~ ., data = d, method = "anova")
+```
+
+```{r}
+plot(t1, margin = 0.02)
+text(t1, cex = 0.75, pretty = 0)
+```
+
+```{r}
+print(t1)
+```
+
+Como vemos, cuando hay una variables cualitativa, se van asignando los diferentes niveles del factor a cada rama que sale del nodo hasta que se encuentra la asignación con menor RSS: 
+- En el nodo 2, si mom_hs = no, nos vamos hacia la izquierda; si mom_hs = si, nos vamos a la derecha.
+- En el nodo 5, si mom_work = trabaja23,trabaja1_completo nos vamos a la izquierda; si mom_work=notrabaja,trabaja1_parcial nos vamos a la derecha.
+
+
+# Parámetros del árbol
+
+```{r}
+t2 = rpart(kid_score ~ ., data = d, method = "anova",
+    control = rpart.control(minsplit = 10, minbucket = 5, cp = 0.007))
+plot(t2, margin = 0.02)
+text(t2, cex=.75, pretty = 0)
+```
+
+```{r}
+print(t2)
+```
+
+- Como vemos, en este caso el criterio que detiene el crecimiento del árbol es cp. Por ejemplo, el nodo 3 se ha dividido ya que 
+
+```{r}
+(118793.70 - 58829.52 - 48941.98)/180386.20
+```
+
+- que es mayor que el límite cp = 0.05.
+
+- Podemos construir un arbol más *profundo*:
+
+```{r}
+t3 = rpart(kid_score ~ mom_iq, data = d, method = "anova",
+    control = rpart.control(minsplit = 10, minbucket = 5, cp = 0.0069))
+plot(t3, margin = 0.02)
+text(t3, cex=.75)
+```
+
+```{r}
+print(t3)
+```
+
+- vemos que el nodo 7 en t2 no se dividía pero en t3 si se divide ya que:
+
+```{r}
+(48941.980 - 38970.810 - 8230.786)/180386.200
+```
+
+- De nuevo cp es el parámetro más restrictivo.
+
+# Residuos
+
+```{r}
+plot(residuals(t3))
+```
+
+- El R2 se define a manera análoga a regresión
+
+$$
+R^2 = 1 - \frac{RSS}{TSS}
+$$
+
+- donde hay que recordar de RSS = deviance(nodo) y TSS = deviance(root)
+
+- Se denomina error relativo al cociente RSS/TSS. Y la X indica que se ha calculado mediante validación cruzada.
+
+```{r}
+par(mfrow = c(1,2))
+rsq.rpart(t3)
+```
+
+- Appatent: R2 calculado con la formula (1 - RSS/TSS)
+- X Relative: R2 calculado con validación cruzada (como vemos, el R2 cuadrado con validación cruzada es menor que el apparent ya que uno esta calculado en los datos train y otro en los datos test).
+- X relative error: 1 - X Relative, es decir, RSS/TSS. Está calculado con validación cruzada. Se dibuja el intervalo +/- SE calculado con validación cruzada.
+
+# Podado
+
+- Los árboles que hemos visto se construyen de arriba hacia abajo, desde el nodo raiz hasta las hojas. Otra estrategia es construir un arbol muy profundo y luego podarlo. Construiriamos el arbol, por tanto, de abajo hacia arriba.
+
+- Primero construimos un arbol profundo:
+
+```{r}
+t4 = rpart(kid_score ~ ., data = d, method = "anova",
+    control = rpart.control(minsplit = 2, cp = 0.005))
+plot(t4, margin = 0.02)
+text(t4, cex=.75)
+```
+
+- Utilizando validación cruzada (el numero de validaciones viene dado por el parámetro xval), se determina el arbol con un determinado numero de hojas que tenga el mayor R2, o de manera equivalente, el menor error relativo.  
+
+```{r}
+t4_printcp = printcp(t4) # lo guardamos en una variable para utilizarlo despues
+```
+
+- Salida de printcp():
+    - col1: numero de hojas del arbol podado.
+    - col2: el valor de cp que hay que utilizar para obtener ese árbol
+    - col3: error relativo del arbol podado, RSS/TSS
+    - col4: error relativo calculado con validación cruzada.
+    - col5: desviación típica de xerror
+- También se puede utilizar plotcp():
+
+```{r}
+plotcp(t4)
+```
+
+- A veces este gráfico tiene un mínimo, por lo que deberíamos seleccionar ese arbol. En caso contrario, elegimos el tamaño donde el error se estabilice.
+
+- Según el gráfico y la tabla anterior, un arbol de 3 hojas parece razonable. 
+
+```{r}
+(t4_cp = t4_printcp[3,"CP"])
+```
+
+- Ahora podamos el arbol:
+
+```{r}
+t4_prune = prune(t4, cp = t4_cp)
+plot(t4_prune, margin = 0.02)
+text(t4_prune, cex=.75)
+```
+
+Ojo, estamos seleccionando el arbol con mayor R2 de acuerdo a validación cruzada (variable xerror). Si nos fijamos en el árbol con menor error de acuerdo a la variable *rel error* tendríamos que elegir el árbol de 20hojas!
+
+
+# Prediccion
+
+```{r}
+xp = data.frame(mom_iq = 95, mom_age = 30, mom_hs = "si", 
+                mom_work = "notrabaja")
+predict(t4_prune, newdata = xp)
+```
+
+- Mirando el arbol se puede verificar fácilmente la predicción.
+

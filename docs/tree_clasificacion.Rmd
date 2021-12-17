@@ -1,0 +1,168 @@
+---
+title: "Árboles de clasificación"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+---
+
+
+# Datos
+
+En este ejemplo vamos a analizar los datos de 150 lirios utilizando árboles de clasificación. Estos datos los podemos encontrar en el paquete *datasets* de R. Para más información podemos teclear *help("iris")* en la consola. Entre otras cosas se obtiene:
+
+*This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica.*
+
+Podemos encontrar más información en https://en.wikipedia.org/wiki/Iris_flower_data_set, como por ejemplo fotos de Iris setosa, versicolor, y virginica.
+
+Para ver el contenido del dataset:
+
+```{r}
+d = iris
+str(d)
+```
+
+```{r}
+plot(d$Sepal.Length, d$Sepal.Width, pch = 19, col = as.numeric(d$Species)+1, xlab = "Sepal.Length", ylab = "Sepal.Width")
+legend(6.2,4.5,legend=c("setosa","versicolor","virginica"), col=c("red","green","blue"), pch=19)
+```
+
+Como vemos, la variable respuesta no es un número, sino que se trata de una variable cualitativa. En este caso tenemos **árboles de clasificación**.
+
+# Estimación del árbol
+
+Primero vamos a dividir aleatoriamente los datos en training set/validation set:
+
+```{r}
+set.seed(1) # utilizamos una semilla para que los resultados sean reproducibles
+ndat = nrow(d)
+pos_train = sample(1:ndat, ndat/2, replace = F) # la mitad de los datos para entranamiento
+datos_train = d[pos_train,] # trainning set
+datos_test = d[-pos_train,] # test set
+```
+
+Estimamos (o entrenamos) un arbol de clasificación con los datos de entrenamiento:
+
+```{r}
+library(rpart)
+t1 <- rpart(Species ~ Sepal.Width + Sepal.Length, data = datos_train, method = "class")
+```
+
+```{r}
+print(t1)
+```
+
+- El arbol de clasificación predice la clase más frecuente.
+- Para dividir un nodo se tiene que minimizar el error de clasificación, que en este caso viene dado por el **índice de Gini**:
+
+$$
+G = \sum _{k=1}^K p_k(1-p_k)
+$$
+
+- donde K es el numero de clases (3 en nuestro ejemplo) y $p_k$ es la proporción de datos pertenecientes a cada clase. Cuanto más pequeño es G, más homogéneo es un nodo. Por ejemplo, si todos los datos pertenecen a la misma clase, $p_k = 1$, G = 0.
+- Por ejemplo, en el nodo 2) de la tabla anterior, $G = 0.8214*(1-0.8214) + 0.1786*(1-0.1786) + 0) = 0.29$.
+- En la tabla se devuelve el criterio por el que se divide el nodo, el numero de datos del nodo, el numero de datos mal clasificados (loss), la clase más frecuente (la predicción), y la proporción de datos que hay de cada clase.
+
+Dibujamos el árbol:
+
+```{r}
+plot(t1, margin = 0.05)
+text(t1, use.n = T, all = T, cex=0.8)
+```
+
+Como sólo tenemos dos regresores, podemos visualizar las particiones que propone el árbol estimado de la siguiente forma:
+
+```{r}
+plot(datos_train$Sepal.Length, datos_train$Sepal.Width, pch = 19, col = as.numeric(datos_train$Species)+1, xlab = "Sepal.Length", ylab = "Sepal.Width" )
+abline(v = 5.55)
+text(4.8,2.6, labels = "setosa")
+abline(v = 6.15)
+text(5.9,3.5, labels = "versicolor")
+text(7,4, labels = "virginica")
+```
+
+Calculamos el error del modelo
+
+```{r}
+yt_p = predict(t1, datos_train, type="class") # para arboles de clasificiacion hay que poner type = "class"
+# creamos una tabla
+table(yt_p, datos_train$Species)
+```
+
+La tabla nos indica que se han predicho correctamente (28 + 12 + 23) = `r (28 + 12 + 23) `, y que hay 12 datos que no se predicen bien (como se observa en el grafico anterior). Por ejemplo, se han predicho 3 setosa que en realidad eran versicolor.
+
+Ahora vamos a calcular el error cometido en los datos test (error de predicción):
+
+```{r}
+yv_p = predict(t1, datos_test, type="class")
+# creamos una tabla
+table(yv_p, datos_test$Species)
+```
+
+- Los resultados empeoran un poco. Tenemos un error de clasificación igual a (8+1+6+11+3)/75 = `r round((8+1+6+11+3)/75,2)`
+
+# Podado
+
+- Utilizamos ahora todos los regresores:
+
+```{r}
+t2 <- rpart(Species ~ ., data = datos_train, method = "class",
+            control = rpart.control(minsplit = 2, cp = 0.001))
+plot(t2, margin = 0.02)
+text(t2, cex=.75)
+```
+
+```{r}
+t2_printcp = printcp(t2) # lo guardamos en una variable para utilizarlo despues
+```
+
+```{r}
+plotcp(t2)
+```
+
+- Ahora podamos el arbol:
+
+```{r}
+t2_prune = prune(t2, cp = 0.021277)
+plot(t2_prune, margin = 0.05)
+text(t2_prune, use.n = T, all = T, cex=0.8)
+```
+
+- El error del modelo es:
+
+```{r}
+ytrain_p2a = predict(t2_prune, datos_train, type="class") # para arboles de clasificiacion hay que poner type = "class"
+# creamos una tabla
+table(ytrain_p2a, datos_train$Species)
+```
+
+- Error de predicción:
+
+```{r}
+ytest_p2a = predict(t2_prune, datos_test, type="class")
+# creamos una tabla
+table(ytest_p2a, datos_test$Species)
+```
+
+# Random forest
+
+```{r}
+library(randomForest)
+rf1 = randomForest(Species ~ ., data = datos_train, mtry = 4, ntree = 500) # bagging
+```
+
+- error de predicción:
+
+```{r}
+ytest_p_rf1 = predict(rf1, datos_test, type="class")
+# creamos una tabla
+table(ytest_p_rf1, datos_test$Species)
+```
+
+
+- Tenemos un error de clasificación igual a 3/75 = `r round(3/75,2)`. 
+
