@@ -1,13 +1,13 @@
 ---
 title: "Árboles de regresión: K regresores"
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
   html_document:
     number_sections: yes
     toc: yes
     toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
 ---
 
 
@@ -125,12 +125,6 @@ text(t4, cex=.75)
 t4_printcp = printcp(t4) # lo guardamos en una variable para utilizarlo despues
 ```
 
-- Salida de printcp():
-    - col1: numero de hojas del arbol podado.
-    - col2: el valor de cp que hay que utilizar para obtener ese árbol
-    - col3: error relativo del arbol podado, RSS/TSS
-    - col4: error relativo calculado con validación cruzada.
-    - col5: desviación típica de xerror
 - También se puede utilizar plotcp():
 
 ```{r}

@@ -1,13 +1,13 @@
 ---
 title: "Árboles de regresión: 1 regresor"
 output:
-  pdf_document:
-    number_sections: yes
-    toc: yes
   html_document:
     number_sections: yes
     toc: yes
     toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
 ---
 
 # Introducción
@@ -173,7 +173,7 @@ t4_printcp = printcp(t4) # lo guardamos en una variable para utilizarlo despues
 ```
 
 - Salida de printcp():
-    - col1: numero de hojas del arbol podado.
+    - col3: numero de divisiones del arbol obtenido. Numero de hojas = numero divisiones + 1
     - col2: el valor de cp que hay que utilizar para obtener ese árbol
     - col3: error relativo del arbol podado, RSS/TSS
     - col4: error relativo calculado con validación cruzada.
@@ -186,7 +186,7 @@ plotcp(t4)
 
 - A veces este gráfico tiene un mínimo, por lo que deberíamos seleccionar ese arbol. En caso contrario, elegimos el tamaño donde el error se estabilice.
 
-- Según el gráfico y la tabla anterior, un arbol de 3 hojas parece razonable. 
+- Según el gráfico y la tabla anterior, un arbol de 3 hojas (nsplit  =2) parece razonable. 
 
 ```{r}
 (t4_cp = t4_printcp[3,"CP"])
